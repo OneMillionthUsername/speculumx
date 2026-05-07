@@ -94,7 +94,7 @@
           const rows = data.slice(0, limit);
           const maxHits = Math.max(...rows.map(r => r.hits ? r.hits.count : 0), 1);
 
-          let html = '<div class="stats-section">';
+          let html = '<section class="stats-section">';
           html += '<h3 class="stats-section-title">' + title + '</h3>';
           html += '<div class="stats-table-wrap"><table class="stats-table">';
           html += '<thead><tr>';
@@ -134,7 +134,7 @@
           if (data.length > limit) {
             html += '<p class="stats-truncated">' + (data.length - limit) + ' weitere Einträge nicht angezeigt</p>';
           }
-          html += '</div>';
+          html += '</section>';
           return html;
         }
       %>

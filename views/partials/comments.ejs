@@ -14,8 +14,7 @@
         </div>
     <% } %>
 
-    <!-- Kommentar-Formular -->
-    <div class="comment-form-container">
+    <section class="comment-form-container" aria-label="Kommentar schreiben">
         <h4 class="mb-3">Kommentar schreiben</h4>
         <form id="comment-form" class="comment-form" method="POST" action="/comments/<%= post.id %>">
             <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
@@ -61,15 +60,14 @@
                 ✉️ Kommentar senden
             </button>
         </form>
-    </div>
-    
-    <!-- Kommentare anzeigen -->
-    <div class="comments-list-container">
+    </section>
+
+    <section class="comments-list-container" aria-label="Diskussion">
         <h4 class="mb-3">💭 Diskussion</h4>
         <div id="comments-list" class="comments-list">
             <% if (typeof comments !== 'undefined' && Array.isArray(comments) && comments.length > 0) { %>
                 <% comments.forEach(function(comment) { %>
-                    <div class="comment-item" data-comment-id="<%= comment.id %>">
+                    <article class="comment-item" data-comment-id="<%= comment.id %>">
                         <div class="comment-header">
                             <span class="comment-username">
                                 👤 <%= comment.username || 'Anonym' %>
@@ -87,7 +85,7 @@
                             <% } %>
                         </div>
                         <div class="comment-text"><%- comment.text || '' %></div>
-                    </div>
+                    </article>
                 <% }); %>
             <% } else { %>
                 <div class="no-comments">
@@ -97,5 +95,5 @@
                 </div>
             <% } %>
         </div>
-    </div>
+    </section>
 </section>
