@@ -9,6 +9,7 @@
         <div class="col-md-10">
             <div class="content-area">
 
+                <section>
                 <h2 class="mb-4">Entwürfe</h2>
                 <% if (typeof drafts !== 'undefined' && Array.isArray(drafts) && drafts.length > 0) { %>
                     <div id="drafts-list">
@@ -34,9 +35,11 @@
                 <% } else { %>
                     <p class="text-muted">Keine Entwürfe vorhanden.</p>
                 <% } %>
+                </section>
 
                 <hr class="my-5">
 
+                <section>
                 <h2 class="mb-4">Zurückgezogene Posts</h2>
                 <% if (typeof unpublished !== 'undefined' && Array.isArray(unpublished) && unpublished.length > 0) { %>
                     <div id="unpublished-list">
@@ -65,12 +68,13 @@
                 <% } else { %>
                     <p class="text-muted">Keine zurückgezogenen Posts vorhanden.</p>
                 <% } %>
+                </section>
 
             </div>
         </div>
     </div>
-    <div class="navigation mt-4 mb-5">
+    <nav class="navigation mt-4 mb-5" aria-label="Seiten-Navigation">
         <a href="/blogpost/all" class="btn btn-outline-primary">Alle Posts</a>
         <a href="/createPost" class="btn btn-outline-success">Neuen Post erstellen</a>
-    </div>
+    </nav>
 </div>

@@ -19,23 +19,22 @@
                             const yearKeys = Object.keys(grouped).sort((a,b) => b - a);
                         %>
                         <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
-                            <div class="archive-years mb-3">
-                                <label for="archive-year-select">Archiv nach Jahr:</label>
-                                <div class="btn-group" role="group" aria-label="Archive years">
+                            <nav class="archive-years mb-3" aria-label="Archiv nach Jahr">
+                                <div class="btn-group" role="group">
                                     <% archiveYears.forEach(function(y) { %>
                                         <a class="btn btn-sm btn-outline-secondary <%= (yearKeys.length === 1 && Number(yearKeys[0]) === Number(y)) ? 'active' : '' %>" href="/blogpost/archive?<%= 'year=' + y %>"><%= y %></a>
                                     <% }); %>
                                 </div>
-                            </div>
+                            </nav>
                         <% } %>
                         <% yearKeys.forEach(function(year) { %>
                             <h2 class="archive-year-heading">Beiträge aus dem Jahr <%= year %></h2>
                             <% grouped[year].forEach(function(post) { %>
-                                <div class="archive-post-item">
+                                <article class="archive-post-item">
                                     <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('id/' + post.id) %>"><%= post.title %></a></h3>
                                     <p class="post-meta"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
                                     <% if (post.excerpt) { %><div class="post-excerpt"><%= post.excerpt %></div><% } %>
-                                </div>
+                                </article>
                             <% }); %>
                         <% }); %>
                     <% } else { %>
@@ -49,10 +48,10 @@
             </div>
         </div>
     </div>
-    <div class="navigation mt-4 mb-5">
+    <nav class="navigation mt-4 mb-5" aria-label="Seiten-Navigation">
         <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
         <a href="/posts" class="btn btn-outline-secondary">Aktuelle Posts</a>
-    </div>
+    </nav>
 </div>
 
 <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>

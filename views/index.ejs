@@ -4,7 +4,7 @@
 %>
 
 <div class="header-section">
-    <div class="sidebar">
+    <aside class="sidebar">
         <h2 class="sidebar-title">Beliebte Beiträge</h2>
         <ul class="nav-list" id="popular-posts">
             <% if (typeof popularPosts !== 'undefined' && Array.isArray(popularPosts) && popularPosts.length > 0) { %>
@@ -59,7 +59,7 @@
                 <% } %>
             </ul>
         </div>
-    </div>
+    </aside>
     <div class="hero-glass-content">
         <div class="d-flex justify-content-center align-items-center mb-2">
             <img src="/assets/ornaments/1131824.svg" alt="Ornament" class="ornament ornament-flip-y mr-3">
@@ -77,7 +77,7 @@
         <div class="featured-posts-grid">
             <% if (typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts) && featuredPosts.length > 0) { %>
                 <% featuredPosts.forEach(function(fp) { %>
-                    <div class="featured-post-card">
+                    <article class="featured-post-card">
                         <h4 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
                         <p class="featured-post-excerpt"><%= fp.excerpt %></p>
                         <!-- <div class="featured-post-actions">
@@ -86,43 +86,43 @@
                             <% } %>
                             <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
                         </div> -->
-                    </div>
+                    </article>
                 <% }); %>
             <% } else { %>
-                <div class="featured-post-card">
+                <article class="featured-post-card">
                     <h4 class="featured-post-title"><a href="/blogpost/beyond-the-first-magic-trick" class="featured-post-link">AI Agents</a></h4>
                     <p class="featured-post-excerpt">Beyond the first magic trick: The disillusionment with AI agents.</p>
                     <div class="featured-post-actions">
                         <a href="/blogpost/beyond-the-first-magic-trick" class="btn btn-outline-primary">Lesen</a>
                     </div>
-                </div>
-                <div class="featured-post-card">
+                </article>
+                <article class="featured-post-card">
                     <h4 class="featured-post-title"><a href="/blogpost/vom-archiv-zur-ablenkung" class="featured-post-link">Vom Archiv zur Ablenkung</a></h4>
                     <p class="featured-post-excerpt">ein Blick in die Vergangenheit des Internets – als Cookies noch nur etwas zum Essen waren...</p>
                     <div class="featured-post-actions">
                         <a href="/blogpost/vom-archiv-zur-ablenkung" class="btn btn-outline-primary">Lesen</a>
                     </div>
-                </div>
-                <div class="featured-post-card">
+                </article>
+                <article class="featured-post-card">
                     <h4 class="featured-post-title"><a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="featured-post-link">Universität Wien</a></h4>
                     <p class="featured-post-excerpt">Wissenschaft im Dienst der Gesinnung</p>
                     <div class="featured-post-actions">
                         <a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="btn btn-outline-primary">Lesen</a>
                     </div>
-                </div>
+                </article>
             <% } %>
         </div>
     </div>
 </div>
 
 
-<div class="container my-5">
+<section class="container my-5">
     <!-- <h3 class="featured-title">Fundstücke & Empfehlungen</h3> -->
     <div class="row" id="discoveries-grid">
         <% if (typeof cards !== 'undefined' && Array.isArray(cards) && cards.length > 0) { %>
             <% cards.forEach(function(card, cardIndex) { %>
                 <div class="col-md-4 discovery-card-item">
-                    <div class="card discovery-card h-100">
+                    <article class="card discovery-card h-100">
                         <% if (card.img_link) { %>
                             <%
                                 let imgSrc, imgSrcset;
@@ -158,7 +158,7 @@
                         <div class="card-footer">
                             <a href="<%= card.link %>" class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer">Mehr lesen</a>
                         </div>
-                    </div>
+                    </article>
                 </div>
             <% }); %>
         <% } else { %>
@@ -168,5 +168,5 @@
     <% if (typeof cardsPagination !== 'undefined' && cardsPagination) { %>
         <%- include('partials/pagination', { pagination: cardsPagination }) %>
     <% } %>
-</div>
+</section>
 

@@ -13,14 +13,14 @@
                 <div id="mostReadPosts">
                     <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
                         <% posts.forEach(function(post, idx) { %>
-                            <div class="most-read-item">
+                            <article class="most-read-item">
                                 <span class="rank">#<%= idx + 1 %></span>
                                 <div class="most-read-content">
                                     <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('id/' + post.id) %>"><%= post.title %></a></h3>
                                     <p><%= (post.views || 0) %> views | <%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
                                     <p class="post-excerpt"><%= post.excerpt %></p>
                                 </div>
-                            </div>
+                            </article>
                         <% }); %>
                     <% } else { %>
                         <div class="loading-spinner">
@@ -32,8 +32,8 @@
             </div>
         </div>
     </div>
-    <div class="navigation mt-4 mb-5">
+    <nav class="navigation mt-4 mb-5" aria-label="Seiten-Navigation">
         <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
         <a href="/posts" class="btn btn-outline-secondary">Alle Posts</a>
-    </div>
+    </nav>
 </div>

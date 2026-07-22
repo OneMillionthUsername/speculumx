@@ -60,7 +60,7 @@
         </div>
     </div>
 
-    <div class="navigation mt-4 mb-5">
+    <nav class="navigation mt-4 mb-5" aria-label="Post-Navigation">
         <a href="/posts" class="btn btn-outline-primary">Alle Blogposts</a>
         <a href="/" class="btn btn-outline-secondary">Zur Startseite</a>
         <a href="/createPost" class="btn btn-outline-success create-link hidden">Neuen Post erstellen</a>
@@ -69,7 +69,7 @@
             Post bearbeiten
         </a>
         <% } %>
-    </div>
+    </nav>
 </div>
 
 <% if (typeof post !== 'undefined' && post) { %>
