@@ -78,7 +78,12 @@ async function buildReadPostViewData(req, res, post) {
     : commentStatus === 'deleted'
       ? 'Kommentar gelöscht.'
       : (commentStatus === 'error' ? 'Kommentar konnte nicht gespeichert werden.' : null);
-  return { isAdmin, comments, csrfToken, commentCount: comments.length, commentStatus, commentMessage, usePrism: true };
+  // SEO: individueller Seitentitel + Meta-Description pro Blogpost,
+  // sonst zeigt Google für alle Beiträge nur den generischen Site-Titel an.
+  const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const pageTitle = post && post.title ? `${post.title} – Sub specie aeternitatis` : undefined;
+  const metaDescription = post ? stripHtml(post.description || post.content).slice(0, 160) || undefined : undefined;
+  return { isAdmin, comments, csrfToken, commentCount: comments.length, commentStatus, commentMessage, usePrism: true, pageTitle, metaDescription };
 }
 
 // commentsRouter.all();
@@ -328,7 +333,9 @@ postRouter.get('/id/:postId',
       const safe = convertBigInts(post) || post;
       try {
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
-        const viewData = await buildReadPostViewData(req, res, sanitized, categories);
+        // viewData aus `safe` bauen: pageTitle/metaDescription werden von EJS
+        // selbst escaped, sonst käme es zu doppeltem Escaping im <title>.
+        const viewData = await buildReadPostViewData(req, res, safe, categories);
         // Prevent caching of personalized HTML (admin vs non-admin)
         applySsrNoCache(res, { varyCookie: true });
         return res.render('readPost', { post: sanitized, ...viewData });
@@ -374,7 +381,8 @@ postRouter.get('/:maybeId',
       const safe = convertBigInts(post) || post;
       try {
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
-        const viewData = await buildReadPostViewData(req, res, sanitized, categories);
+        // viewData aus `safe` bauen (siehe Kommentar in der /id/:postId-Route)
+        const viewData = await buildReadPostViewData(req, res, safe, categories);
         applySsrNoCache(res, { varyCookie: true });
         return res.render('readPost', { post: sanitized, ...viewData });
       } catch (_e) {
