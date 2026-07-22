@@ -49,6 +49,9 @@
     padding: 20px;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    /* Floats (z. B. via TinyMCE ausgerichtete Bilder) einschliessen,
+       damit ein Bild am Ende nicht aus dem Container ragt */
+    display: flow-root;
 }
 
 /* ── 3. HEADINGS ── */

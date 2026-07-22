@@ -1054,6 +1054,9 @@ a:hover { color: var(--text); }
     line-height: 1.8;
     color: var(--text);
     margin-bottom: 30px;
+    /* Floats (z. B. via TinyMCE ausgerichtete Bilder) einschliessen,
+       damit ein Bild am Postende nicht über die Kommentare ragt */
+    display: flow-root;
 }
 
 .post-content hr {
@@ -2821,6 +2824,8 @@ a.tag:hover {
 .comments-section {
     margin-top: 3rem;
     padding-top: 0;
+    /* Sicherheitsnetz gegen überlappende Floats aus dem Post-Content */
+    clear: both;
 }
 
 .comments-divider hr {
