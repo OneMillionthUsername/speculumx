@@ -1,5 +1,9 @@
 import dotenv from 'dotenv';
-dotenv.config({ path: `/var/www/blog/.env.${process.env.NODE_ENV || 'development'}` });
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '..', `.env.${process.env.NODE_ENV || 'development'}`) });
 
 // config/config.js
 

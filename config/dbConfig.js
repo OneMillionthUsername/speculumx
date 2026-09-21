@@ -2,8 +2,14 @@
 /**
 - Separation of Configurations: Keeps all environment configurations in one place for easier management.
 - Environment Flexibility: Allows easy switching of configurations for different environments (development, production).
-- Database Configuration: Centralizes database connection settings for better maintainability. 
+- Database Configuration: Centralizes database connection settings for better maintainability.
 */
+
+// Side-effect import: ensures dotenv has loaded .env.<NODE_ENV> before we read
+// process.env below. Standalone scripts (scripts/*.mjs) import databases/mariaDB.js
+// directly without ever importing config.js first, so without this, DB_USER/
+// DB_PASSWORD/DB_NAME are silently empty when run outside app.js/Docker.
+import './config.js';
 
 export const dbConfig = {
   host: process.env.DB_HOST || '127.0.0.1',
