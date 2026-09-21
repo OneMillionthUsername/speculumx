@@ -412,15 +412,11 @@ export const DatabaseService = {
 
       const postRow = posts[0];
 
-      // Fetch associated media via post_media (guard in case table doesn't exist or no media)
+      // Fetch associated media via media.postId (guard in case of unexpected query errors)
       let mediaRows = [];
       try {
         mediaRows = await conn.query(
-          `SELECT m.id, m.original_name, m.upload_path, m.mime_type, m.alt_text
-           FROM media m
-           JOIN post_media pm ON pm.mediaId = m.id
-           WHERE pm.postId = ?
-           ORDER BY pm.id ASC`,
+          'SELECT id, original_name, upload_path, mime_type, alt_text FROM media WHERE postId = ? ORDER BY id ASC',
           [postRow.id],
         );
       } catch (mediaErr) {
@@ -484,11 +480,7 @@ export const DatabaseService = {
       }
       const postRow = posts[0];
       const mediaRows = await conn.query(
-        `SELECT m.id, m.original_name, m.upload_path, m.mime_type, m.alt_text
-         FROM media m
-         JOIN post_media pm ON pm.mediaId = m.id
-         WHERE pm.postId = ?
-         ORDER BY pm.id ASC`,
+        'SELECT id, original_name, upload_path, mime_type, alt_text FROM media WHERE postId = ? ORDER BY id ASC',
         [postRow.id],
       );
       const post = convertBigInts(postRow);
@@ -700,7 +692,8 @@ export const DatabaseService = {
       //const result = await conn.query(query, params);
       const result = await conn.query('SELECT * FROM posts WHERE tags LIKE ?', [`%${tag}%`]);
       if(!result || result.length === 0) {
-        throw new Error('No posts found for this tag');
+        logger.warn(`No posts found for tag "${tag}"`);
+        return [];
       }
       return result.map(post => {
         convertBigInts(post);
@@ -721,7 +714,8 @@ export const DatabaseService = {
       conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM posts ORDER BY views DESC LIMIT 5');
       if(!result || result.length === 0) {
-        throw new Error('No posts found');
+        logger.warn('No posts found for getMostReadPosts');
+        return [];
       }
       return result.map(post => {
         convertBigInts(post);
@@ -773,7 +767,6 @@ export const DatabaseService = {
       conn = await getDatabasePool().getConnection();
 
       const keys = updatableFields.filter(field => field in post);
-      const setClause = keys.map(k => `\`${k}\` = ?`).join(', ');
       const values = keys.map(k => {
         if (k === 'tags') {
           const raw = post[k];
@@ -799,15 +792,17 @@ export const DatabaseService = {
         }
         return post[k];
       });
+      // Set published_at on first publish (only if not already set) — folded into
+      // the same UPDATE so this stays a single atomic statement, not two round trips.
+      const setParts = keys.map(k => `\`${k}\` = ?`);
+      if (post.published) {
+        setParts.push('published_at = COALESCE(published_at, NOW())');
+      }
       values.push(post.id);
-      const updateSql = `UPDATE posts SET ${setClause} WHERE id = ?`;
+      const updateSql = `UPDATE posts SET ${setParts.join(', ')} WHERE id = ?`;
       const result = await conn.query(updateSql, values);
       if(!result || result.affectedRows === 0) {
         throw new Error(`Failed to update post with id ${post.id}`);
-      }
-      // Set published_at on first publish (only if not already set)
-      if (post.published) {
-        await conn.query('UPDATE posts SET published_at = COALESCE(published_at, NOW()) WHERE id = ?', [post.id]);
       }
       return { success: true };
     } catch (error) {
@@ -1117,6 +1112,26 @@ export const DatabaseService = {
     } catch (error) {
       logger.error(`Error in getAllCategories: ${error.message}`);
       throw new databaseError(`Error in getAllCategories: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getCategoryById(id) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT * FROM categories WHERE id = ?', [id]);
+      if (!result || result.length === 0) return null;
+      const row = result[0];
+      return {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        slug: row.slug,
+      };
+    } catch (error) {
+      logger.error(`Error in getCategoryById: ${error.message}`);
+      throw new databaseError(`Error in getCategoryById: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -1475,6 +1490,22 @@ export const DatabaseService = {
     } catch (error) {
       logger.error(`Error in getMediaById: ${error.message}`);
       throw new databaseError(`Error in getMediaById: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getMediaByPostId(postId) {
+    let conn;
+    try {
+      if (!postId || isNaN(postId) || postId === null) {
+        throw new databaseError('Post ID is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT * FROM media WHERE postId = ? ORDER BY id ASC', [postId]);
+      return result.map(row => convertBigInts(row));
+    } catch (error) {
+      logger.error(`Error in getMediaByPostId: ${error.message}`);
+      throw new databaseError(`Error in getMediaByPostId: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }

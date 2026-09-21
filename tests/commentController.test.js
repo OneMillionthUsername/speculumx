@@ -49,7 +49,7 @@ const makeDbComment = (overrides = {}) => ({
 beforeEach(() => {
   jest.clearAllMocks();
   mockSendMail.mockResolvedValue(undefined);
-  mockDb.createComment.mockResolvedValue({ affectedRows: 1, comment: { text: 'x' } });
+  mockDb.createComment.mockResolvedValue({ success: true, comment: { text: 'x' } });
 });
 
 describe('commentController', () => {
@@ -83,8 +83,8 @@ describe('commentController', () => {
       expect(commentArg.username).toBe('O\'Brien & Co');
     });
 
-    it('throws when DB returns no affectedRows', async () => {
-      mockDb.createComment.mockResolvedValue({ affectedRows: 0 });
+    it('throws when DB reports success: false', async () => {
+      mockDb.createComment.mockResolvedValue({ success: false });
       await expect(commentController.createCommentRecord(1, makeBody()))
         .rejects.toThrow('Failed to save comment to database');
     });
@@ -96,7 +96,7 @@ describe('commentController', () => {
     });
 
     it('returns the DB result on success', async () => {
-      const dbResult = { affectedRows: 1, insertId: 42 };
+      const dbResult = { success: true, comment: { id: 42 } };
       mockDb.createComment.mockResolvedValue(dbResult);
       const result = await commentController.createCommentRecord(1, makeBody());
       expect(result).toBe(dbResult);

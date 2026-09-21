@@ -34,7 +34,7 @@ async function createCommentRecord(postId, body) {
   }
 
   const result = await DatabaseService.createComment(postId, value);
-  if (!result || result.affectedRows === 0) {
+  if (!result || !result.success) {
     throw new CommentControllerException(
       'Failed to save comment to database',
       { postId, commentData: value, dbResult: result },
