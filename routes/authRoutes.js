@@ -21,6 +21,19 @@ function getClientIp(req) {
     || 'unknown';
 }
 
+// Nur same-origin Referer als Redirect-Ziel akzeptieren (verhindert Open Redirect)
+function resolveSafeRedirect(req, fallback) {
+  const referer = req.get('Referer');
+  if (!referer) return fallback;
+  try {
+    const refUrl = new URL(referer);
+    if (refUrl.hostname === req.hostname) {
+      return refUrl.pathname + refUrl.search;
+    }
+  } catch { /* invalid URL, use fallback */ }
+  return fallback;
+}
+
 /**
  * Authentication routes
  *
@@ -62,6 +75,7 @@ const authRouter = express.Router();
 // Login-Validierung
 authRouter.post('/login',
   loginLimiter,
+  csrfProtection,
   celebrate({
     [Segments.BODY]: Joi.object({
       username: Joi.string().min(1).max(100).required(),
@@ -145,9 +159,7 @@ authRouter.post('/login',
       }, 'INFO');
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       if (wantsHtml) {
-        const fallback = '/createPost';
-        const referer = req.get('Referer');
-        return res.redirect(303, referer || fallback);
+        return res.redirect(303, resolveSafeRedirect(req, '/createPost'));
       }
       res.json({
         success: true,
@@ -177,8 +189,7 @@ authRouter.post('/login',
         hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
       });
       if (wantsHtml) {
-        const referer = req.get('Referer');
-        return res.redirect(303, referer || '/createPost?login=error');
+        return res.redirect(303, resolveSafeRedirect(req, '/createPost?login=error'));
       }
       res.status(500).json({ success: false, error: 'Internal server error' });
     }

@@ -10,6 +10,7 @@ import {
 } from './common.js';
 import { isAdmin, setAdmin } from './state/adminState.js';
 import { isAdminFromServer } from './config.js';
+import { makeApiRequest } from './api.js';
 
 // Admin-Status (module-scoped via state store)
 let currentUser = null;
@@ -147,25 +148,18 @@ function showAdminLoginModal() {
       if (submitBtn) submitBtn.disabled = true;
 
       try {
-        const response = await fetch('/auth/login', {
+        const result = await makeApiRequest('/auth/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          credentials: 'same-origin',
           body: JSON.stringify({ username, password }),
         });
 
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
+        if (!result.success) {
           _showError(GENERIC_LOGIN_ERROR);
           return;
         }
 
         setAdmin(true);
-        currentUser = data && data.user ? data.user : null;
+        currentUser = result.data && result.data.user ? result.data.user : null;
         showFeedback('Login erfolgreich.', 'success');
 
         if (modal && modal.parentElement) {

@@ -15,6 +15,21 @@ function getDOMPurifySync() {
   return (typeof window.DOMPurify !== 'undefined') ? window.DOMPurify : null;
 }
 
+// Sanitize AI-generated HTML before it ever touches innerHTML — the model's
+// response is untrusted output, not just a convenience string.
+function sanitizeAiHtml(html) {
+  const DOMPurify = getDOMPurifySync();
+  // Without DOMPurify, fall back to plain escaped text rather than dropping
+  // the content — still safe to put in innerHTML, just loses formatting.
+  if (!DOMPurify) return escapeHtml(html);
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'option', 'meta', 'link'],
+    ADD_ATTR: ['style', 'class', 'id', 'align'],
+    ALLOW_DATA_ATTR: false,
+  });
+}
+
 // Notify other modules to refresh preview without relying on globals
 function safeUpdatePreview() {
   try {
@@ -48,7 +63,7 @@ async function preloadDOMPurify() {
 // Start background preload (best-effort)
 try { preloadDOMPurify(); } catch { /* ignore */ }
 import { makeApiRequest } from '../api.js';
-import { showAlertModal, showNotification } from '../common.js';
+import { showAlertModal, showNotification, escapeHtml } from '../common.js';
 import { registerAction } from '../actions/actionRegistry.js';
 
 // Gemini API Konfiguration (Key bleibt serverseitig, alle Calls laufen über /api/ai/generate)
@@ -500,10 +515,13 @@ Regeln:
   const summary = await callGeminiAPIWithFetchFallback(htmlContent, systemInstruction);
 
     // Zusammenfassung in einem Modal anzeigen und Möglichkeit anbieten, sie in den Editor einzufügen
+    // Die AI-Antwort ist ungetrustetes HTML — vor der Anzeige (innerHTML) sanitizen,
+    // nicht erst beim "Einfügen"-Klick.
+    const safeSummary = sanitizeAiHtml(summary);
     const summaryModal = `
       <div class="ai-summary-modal-container">
         <h4 class="ai-summary-modal-header">AI-Zusammenfassung</h4>
-        <div class="ai-summary-modal-content">${summary}</div>
+        <div class="ai-summary-modal-content">${safeSummary}</div>
         <div class="ai-summary-modal-footer">
           <button data-action="apply-summary" data-html="${encodeURIComponent(summary)}" class="ai-summary-modal-button-apply">
             ➕ Einfügen
