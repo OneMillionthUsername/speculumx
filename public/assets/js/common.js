@@ -279,11 +279,9 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
     }
 
     console.log('[checkAndPrefillEditPostForm] Fetching post from API:', postId);
-    let apiResult = await apiRequest(`/api/blogpost/id/${postId}`, { method: 'GET' });
-    if ((!apiResult || apiResult.success !== true) && apiResult && apiResult.status === 404) {
-      console.log('[checkAndPrefillEditPostForm] Trying fallback endpoint');
-      apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
-    }
+    // Admin-only, publish-status-agnostic endpoint — /api/blogpost/id/:id is public
+    // and published-only, so it 404s for drafts (see /api/blogpost/edit/:id).
+    const apiResult = await apiRequest(`/api/blogpost/edit/${postId}`, { method: 'GET' });
     if (!apiResult || apiResult.success !== true) {
       console.error('[checkAndPrefillEditPostForm] Failed to load post:', apiResult);
       return;

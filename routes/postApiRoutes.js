@@ -133,6 +133,20 @@ postApiRouter.get('/id/:postId', globalLimiter, validateId, async (req, res) => 
   }
 });
 
+// Admin-only: fetch a post by id regardless of published status, for the edit-form prefill.
+// Unlike /id/:postId (public, published-only), this also returns drafts.
+postApiRouter.get('/edit/:postId', globalLimiter, validateId, authenticateToken, requireAdmin, async (req, res) => {
+  const postId = req.params.postId;
+  try {
+    const post = await postController.getPostByIdForEdit(postId);
+    return res.json(convertBigInts(post) || post);
+  } catch (error) {
+    console.error('Error loading the blog post by id for edit (api):', error);
+    if (error instanceof PostControllerException) return res.status(404).json({ error: 'Blogpost not found' });
+    return res.status(500).json({ error: 'Server failed to load the blogpost' });
+  }
+});
+
 postApiRouter.get('/archive', globalLimiter, async (req, res) => {
   try {
     const yearParam = req.query && req.query.year ? String(req.query.year).trim() : null;
