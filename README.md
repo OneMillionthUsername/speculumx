@@ -25,7 +25,7 @@ Moderne Blog-Plattform auf Basis von Node.js, Express 5 und MariaDB mit SSR (EJS
 - `helmet` mit CSP
 - CSRF-Schutz via `@dr.pogodin/csurf`
 - Rate-Limits (global, strict, login)
-- Input-Sanitizing/Escaping-Middleware
+- Input-Sanitizing (DOMPurify für Rich-Text-Felder wie `content`/`description`) + Output-Escaping in den EJS-Views
 - `httpOnly` Auth-Cookies, `sameSite: strict`, `secure` in Production
 - Validierung mit `celebrate`/`Joi`
 
@@ -208,6 +208,10 @@ Wichtige Variablen (siehe `.env.example`):
 - `npm run sanitize-db:dry`
 - `npm run sanitize-db:prod`
 - `npm run sanitize-db:prod:dry`
+- `npm run unescape-db` — einmalige Migration: entfernt HTML-Entities, die unter dem alten Input-Escaping-Modell in DB-Textspalten landeten
+- `npm run unescape-db:dry`
+- `npm run unescape-db:prod`
+- `npm run unescape-db:prod:dry`
 
 ## Route-Überblick
 

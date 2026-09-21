@@ -1,5 +1,5 @@
 import _path from 'path';
-import { escapeAllStrings } from '../utils/utils.js';
+import { sanitizeInputStrings } from '../utils/utils.js';
 import * as utils from '../utils/utils.js';
 import logger from '../utils/logger.js';
 
@@ -27,8 +27,12 @@ export function requireJsonContent(req, res, next) {
  * @param {string[]} whitelist - names of fields that contain HTML (e.g. ['content'])
  */
 /**
- * Factory that returns middleware to escape/sanitize incoming input objects
- * (body, query, params, cookies, headers) to reduce XSS/HTML injection risks.
+ * Factory that returns middleware to sanitize incoming input objects
+ * (body, query, params, cookies).
+ *
+ * Plain strings stay RAW — HTML escaping happens at output (EJS `<%= %>`).
+ * Whitelisted rich-text fields are sanitized via DOMPurify; prototype-pollution
+ * keys cause a 400 response.
  *
  * @param {string[]} whitelist - Feldnamen, die HTML erlauben (z.B. ['content']).
  * @returns {import('express').RequestHandler} Middleware-Funktion.
@@ -37,13 +41,13 @@ export function createEscapeInputMiddleware(whitelist = []) {
   return function escapeInputMiddleware(req, res, next) {
     try {
       if (req.body && typeof req.body === 'object') {
-        Object.assign(req.body, escapeAllStrings(req.body, whitelist));
+        Object.assign(req.body, sanitizeInputStrings(req.body, whitelist));
       }
       if (req.query && typeof req.query === 'object') {
-        Object.assign(req.query, escapeAllStrings(req.query, whitelist));
+        Object.assign(req.query, sanitizeInputStrings(req.query, whitelist));
       }
       if (req.params && typeof req.params === 'object') {
-        Object.assign(req.params, escapeAllStrings(req.params, whitelist));
+        Object.assign(req.params, sanitizeInputStrings(req.params, whitelist));
       }
       if (req.cookies && typeof req.cookies === 'object') {
         // Exclude CSRF tokens from sanitization to prevent loops
@@ -51,17 +55,9 @@ export function createEscapeInputMiddleware(whitelist = []) {
         const cookiesToSanitize = Object.fromEntries(
           Object.entries(req.cookies).filter(([key]) => !csrfKeys.includes(key)),
         );
-        const sanitizedCookies = escapeAllStrings(cookiesToSanitize, whitelist);
+        const sanitizedCookies = sanitizeInputStrings(cookiesToSanitize, whitelist);
         Object.assign(req.cookies, sanitizedCookies);
       }
-      const safeHeaders = ['user-agent', 'referer'];
-      safeHeaders.forEach(h => {
-        if (req.headers[h] && typeof req.headers[h] === 'object') {
-          Object.assign(req.headers[h], escapeAllStrings(req.headers[h], whitelist));
-        } else if (req.headers[h] && typeof req.headers[h] === 'string') {
-          req.headers[h] = escapeAllStrings(req.headers[h], whitelist);
-        }
-      });
       // File-Uploads: nur die Originalnamen escapen
       if (req.file) {
         req.file.safeFilename = utils.sanitizeFilename(req.file.originalname);

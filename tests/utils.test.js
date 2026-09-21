@@ -10,33 +10,14 @@ jest.unstable_mockModule('../utils/sanitizer.js', () => ({
 }));
 
 const {
-  escapeHtml,
   unescapeHtml,
-  escapeAllStrings,
+  sanitizeInputStrings,
   createSlug,
   truncateSlug,
   convertBigInts,
   parseTags,
   sanitizeFilename,
 } = await import('../utils/utils.js');
-
-describe('escapeHtml', () => {
-  it('escapes all five HTML special characters', () => {
-    expect(escapeHtml('<script>alert("xss")</script>'))
-      .toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
-    expect(escapeHtml('it\'s & that')).toBe('it&#39;s &amp; that');
-  });
-
-  it('returns non-strings unchanged', () => {
-    expect(escapeHtml(42)).toBe(42);
-    expect(escapeHtml(null)).toBe(null);
-    expect(escapeHtml(undefined)).toBe(undefined);
-  });
-
-  it('returns empty string unchanged', () => {
-    expect(escapeHtml('')).toBe('');
-  });
-});
 
 describe('unescapeHtml', () => {
   it('reverses all five HTML entities', () => {
@@ -54,40 +35,35 @@ describe('unescapeHtml', () => {
   });
 });
 
-describe('escapeAllStrings', () => {
-  it('escapes strings in a flat object', () => {
-    const result = escapeAllStrings({ name: '<b>test</b>', count: 5 });
-    expect(result.name).toBe('&lt;b&gt;test&lt;/b&gt;');
+describe('sanitizeInputStrings', () => {
+  it('leaves plain strings raw (escaping happens at output)', () => {
+    const result = sanitizeInputStrings({ title: 'A "quoted" & <b>title</b>', count: 5 });
+    expect(result.title).toBe('A "quoted" & <b>title</b>');
     expect(result.count).toBe(5);
   });
 
-  it('escapes strings in nested objects', () => {
-    const result = escapeAllStrings({ a: { b: '<x>' } });
-    expect(result.a.b).toBe('&lt;x&gt;');
+  it('leaves nested objects and arrays raw', () => {
+    const result = sanitizeInputStrings({ a: { b: '<x>' }, tags: ['C&C', '"q"'] });
+    expect(result.a.b).toBe('<x>');
+    expect(result.tags).toEqual(['C&C', '"q"']);
   });
 
-  it('escapes strings in arrays', () => {
-    const result = escapeAllStrings(['<a>', '<b>']);
-    expect(result).toEqual(['&lt;a&gt;', '&lt;b&gt;']);
-  });
-
-  it('skips whitelisted keys (passes through via domPurifyInstance mock)', () => {
+  it('sanitizes whitelisted keys via DOMPurify instance', () => {
     const mockPurify = { sanitize: jest.fn((s) => `SANITIZED:${s}`) };
-    const result = escapeAllStrings({ content: '<p>hello</p>' }, ['content'], [], mockPurify);
-    expect(mockPurify.sanitize).toHaveBeenCalled();
+    const result = sanitizeInputStrings({ content: '<p>hello</p>', title: '<b>t</b>' }, ['content'], [], mockPurify);
     expect(result.content).toBe('SANITIZED:<p>hello</p>');
+    expect(result.title).toBe('<b>t</b>');
   });
 
   it('throws on prototype-polluting keys', () => {
-    // { __proto__: 'evil' } in object literal syntax sets the prototype, not an own property.
-    // JSON.parse creates a real own property named __proto__.
-    expect(() => escapeAllStrings(JSON.parse('{"__proto__": "evil"}'))).toThrow('Forbidden key detected');
-    expect(() => escapeAllStrings({ constructor: 'evil' })).toThrow('Forbidden key detected');
+    expect(() => sanitizeInputStrings(JSON.parse('{"__proto__": "evil"}'))).toThrow('Forbidden key detected');
+    expect(() => sanitizeInputStrings({ constructor: 'evil' })).toThrow('Forbidden key detected');
+    expect(() => sanitizeInputStrings({ prototype: 'evil' })).toThrow('Forbidden key detected');
   });
 
   it('returns null and undefined unchanged', () => {
-    expect(escapeAllStrings(null)).toBeNull();
-    expect(escapeAllStrings(undefined)).toBeUndefined();
+    expect(sanitizeInputStrings(null)).toBeNull();
+    expect(sanitizeInputStrings(undefined)).toBeUndefined();
   });
 });
 

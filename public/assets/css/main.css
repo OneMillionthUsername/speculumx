@@ -3058,6 +3058,8 @@ a.tag:hover {
     color: var(--text);
     line-height: 1.65;
     letter-spacing: 0.02em;
+    /* Kommentare sind Nur-Text (escaped ausgegeben); Zeilenumbrüche erhalten */
+    white-space: pre-line;
 }
 
 .comment-delete-btn {

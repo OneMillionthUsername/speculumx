@@ -48,25 +48,9 @@ describe('Comment Sanitization', () => {
     });
   });
 
-  describe('Username sanitization', () => {
-    it('should escape HTML in usernames', () => {
-      const escapeHtml = (text) => {
-        if (!text) return '';
-        return text
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
-      };
-
-      const dangerous = '<script>alert("evil")</script>User';
-      const escaped = escapeHtml(dangerous);
-      
-      expect(escaped).toBe('&lt;script&gt;alert(&quot;evil&quot;)&lt;/script&gt;User');
-      expect(escaped).not.toContain('<script>');
-    });
-
+  describe('Username normalization', () => {
+    // Usernames werden roh gespeichert und erst bei der Ausgabe escaped
+    // (EJS `<%= %>`) — hier wird nur die Normalisierung getestet.
     it('should handle empty usernames', () => {
       const normalizeUsername = (username) => {
         if (!username || String(username).trim() === '') {

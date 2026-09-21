@@ -1,5 +1,5 @@
 <% // Minimal server config for client-side admin detection (single include) %>
-<% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\u003c').replace(/-->/g, '--\u003e').replace(/\u2028/g, '\u2028').replace(/\u2029/g, '\u2029'); } catch (e) { return 'null'; } } %>
+<% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\\u003c').replace(/-->/g, '--\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029'); } catch (e) { return 'null'; } } %>
 <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
 <% const __isAdmin = (typeof isAdmin !== 'undefined') ? !!isAdmin : false; %>
 <% const __assetVersion = (typeof assetVersion !== 'undefined') ? String(assetVersion || '') : ''; %>

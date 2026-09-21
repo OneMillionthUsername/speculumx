@@ -23,21 +23,6 @@ export function sanitizeFilename(name) {
     .replace(/[^a-zA-Z0-9._-]/g, '_')      // nur erlaubte Zeichen
     .substring(0, 255);                     // Länge begrenzen
 }
-/**
- * Escapes HTML entities in a string to prevent injection when rendering
- * untrusted content into templates.
- * @param {string} str
- * @returns {string}
- */
-export function escapeHtml(str) {
-  if (typeof str !== 'string') return str;
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 export function unescapeHtml(str) {
   if (typeof str !== 'string') return str;
   return str
@@ -48,16 +33,19 @@ export function unescapeHtml(str) {
     .replace(/&amp;/g, '&');
 }
 /**
- * Escape strings recursively but:
- * - prevent prototype pollution by skipping forbidden keys
- * - allow whitelist fields to be SANITIZED (DOMPurify) instead of raw
+ * Input-side sanitization: leaves plain strings RAW (escaping happens at
+ * output via EJS `<%= %>`), but:
+ * - sanitizes whitelisted rich-text fields (e.g. `content`) via DOMPurify
+ * - throws on prototype-pollution keys (__proto__, constructor, prototype)
+ *
+ * Recurses into arrays/objects, mutates objects in place.
  *
  * @param {any} obj
  * @param {string[]} whitelist - field names that should be sanitized (allowed HTML)
  * @param {string[]} path
  */
-export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstance = null) {
-  if(obj === null || obj === undefined) return obj; // null, undefined, false, 0
+export function sanitizeInputStrings(obj, whitelist = [], path = [], domPurifyInstance = null) {
+  if (obj === null || obj === undefined) return obj;
   // strings
   if (typeof obj === 'string') {
     const currentKey = path[path.length - 1];
@@ -78,21 +66,21 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
         throw new Error(`Sanitization failed for key "${currentKey}": ${error.message}`);
       }
     }
-    return escapeHtml(obj);
+    // Plain strings stay raw — escaping is the renderer's job
+    return obj;
   }
   // arrays
   if (Array.isArray(obj)) {
-    return obj.map((item, i) => escapeAllStrings(item, whitelist, [...path, String(i)], domPurifyInstance));
+    return obj.map((item, i) => sanitizeInputStrings(item, whitelist, [...path, String(i)], domPurifyInstance));
   }
   // objects
   if (obj && typeof obj === 'object') {
     for (const key of Object.keys(obj)) {
       if (FORBIDDEN_KEYS.has(key)) {
-        // skip to prevent prototype pollution
+        // throw to prevent prototype pollution
         throw new Error(`Forbidden key detected: "${key}"`);
-        //continue;
       }
-      obj[key] = escapeAllStrings(obj[key], whitelist, [...path, key], domPurifyInstance);
+      obj[key] = sanitizeInputStrings(obj[key], whitelist, [...path, key], domPurifyInstance);
     }
     return obj;
   }

@@ -7,14 +7,10 @@ const mockDb = {
   deleteComment: jest.fn(),
   getPostById: jest.fn(),
 };
-const mockSanitizeHtml = jest.fn((s) => s);
 const mockSendMail = jest.fn();
 
 jest.unstable_mockModule('../databases/mariaDB.js', () => ({
   DatabaseService: mockDb,
-}));
-jest.unstable_mockModule('../utils/sanitizer.js', () => ({
-  sanitizeHtml: mockSanitizeHtml,
 }));
 jest.unstable_mockModule('../utils/logger.js', () => ({
   default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
@@ -52,7 +48,6 @@ const makeDbComment = (overrides = {}) => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockSanitizeHtml.mockImplementation((s) => s);
   mockSendMail.mockResolvedValue(undefined);
   mockDb.createComment.mockResolvedValue({ affectedRows: 1, comment: { text: 'x' } });
 });
@@ -69,17 +64,10 @@ describe('commentController', () => {
         .rejects.toThrow('Validation failed:');
     });
 
-    it('sanitizes the comment text via sanitizeHtml', async () => {
-      mockSanitizeHtml.mockReturnValue('<p>clean</p>');
-      await commentController.createCommentRecord(1, makeBody({ text: '<script>bad</script>' }));
-      expect(mockSanitizeHtml).toHaveBeenCalledWith('<script>bad</script>');
-    });
-
-    it('falls back to escapeHtml when sanitizeHtml throws', async () => {
-      mockSanitizeHtml.mockImplementation(() => { throw new Error('sanitizer unavailable'); });
-      // Should not throw — falls back to escapeHtml
-      await expect(commentController.createCommentRecord(1, makeBody()))
-        .resolves.toBeDefined();
+    it('stores the comment text raw (escaping happens at output)', async () => {
+      await commentController.createCommentRecord(1, makeBody({ text: 'A "quoted" & <b>text</b>' }));
+      const [, commentArg] = mockDb.createComment.mock.calls[0];
+      expect(commentArg.text).toBe('A "quoted" & <b>text</b>');
     });
 
     it('defaults username to Anonym when empty', async () => {
@@ -89,11 +77,10 @@ describe('commentController', () => {
       expect(commentArg.username).toBe('Anonym');
     });
 
-    it('HTML-escapes the username', async () => {
-      await commentController.createCommentRecord(1, makeBody({ username: '<script>evil</script>' }));
+    it('stores the username raw but trimmed', async () => {
+      await commentController.createCommentRecord(1, makeBody({ username: '  O\'Brien & Co  ' }));
       const [, commentArg] = mockDb.createComment.mock.calls[0];
-      expect(commentArg.username).not.toContain('<script>');
-      expect(commentArg.username).toContain('&lt;');
+      expect(commentArg.username).toBe('O\'Brien & Co');
     });
 
     it('throws when DB returns no affectedRows', async () => {

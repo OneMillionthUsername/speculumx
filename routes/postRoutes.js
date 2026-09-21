@@ -27,7 +27,6 @@ import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
-import { escapeAllStrings } from '../utils/utils.js';
 import { withExcerpts } from '../public/assets/js/shared/text.js';
 
 const postRouter = express.Router();
@@ -112,7 +111,7 @@ async function getAllHandler(req, res) {
     const response = convertBigInts(posts) || [];
     const pagination = buildPagination(page, total, '/blogpost/all');
     
-    const safePosts = withExcerpts(Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response);
+    const safePosts = withExcerpts(response);
     const isAdmin = getSsrAdmin(res);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     applySsrNoCache(res, { varyCookie: true });
@@ -177,12 +176,11 @@ postRouter.get('/tag/:tag', globalLimiter, csrfProtection, async (req, res) => {
       return renderPaginationNotFound(req, res);
     }
     const response = convertBigInts(posts) || posts;
-    const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
     const isAdmin = getSsrAdmin(res);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     const pagination = buildPagination(page, total, `/blogpost/tag/${tag}`);
     applySsrNoCache(res, { varyCookie: true });
-    return res.render('listCurrentPosts', { posts: withExcerpts(safeResponse), isAdmin, csrfToken, activeTag: tag, pagination });
+    return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin, csrfToken, activeTag: tag, pagination });
   } catch (error) {
     console.error('Error loading blog posts by tag', error);
     const isAdmin = getSsrAdmin(res);
@@ -201,12 +199,11 @@ postRouter.get('/category/:categorySlug', globalLimiter, csrfProtection, async (
       return renderPaginationNotFound(req, res);
     }
     const response = convertBigInts(posts) || posts;
-    const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
     const isAdmin = getSsrAdmin(res);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     const pagination = buildPagination(page, total, `/blogpost/category/${categorySlug}`);
     applySsrNoCache(res, { varyCookie: true });
-    return res.render('listCurrentPosts', { posts: withExcerpts(safeResponse), isAdmin, csrfToken, category: categorySlug, pagination });
+    return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin, csrfToken, category: categorySlug, pagination });
   } catch (error) {
     console.error('Error loading blog posts by category', error);
     const isAdmin = getSsrAdmin(res);
@@ -266,18 +263,10 @@ postRouter.get('/most-read', globalLimiter, csrfProtection, async (req, res) => 
     const response = convertBigInts(posts) || posts;
 
     // Render HTML view for browsers (SSR-only)
-    try {
-      const safePosts = withExcerpts(Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response);
-      const isAdmin = getSsrAdmin(res);
-      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-      applySsrNoCache(res, { varyCookie: true });
-      return res.render('mostReadPosts', { posts: safePosts, isAdmin, csrfToken });
-    } catch (_e) {
-      const isAdmin = getSsrAdmin(res);
-      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-      applySsrNoCache(res, { varyCookie: true });
-      return res.render('mostReadPosts', { posts: withExcerpts(response), isAdmin, csrfToken });
-    }
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('mostReadPosts', { posts: withExcerpts(response), isAdmin, csrfToken });
   } catch (error) {
     console.error('Error loading most read blog posts', error);
     // If the controller indicates there are simply no valid published posts,
@@ -331,19 +320,10 @@ postRouter.get('/id/:postId',
         incrementViews(req, post.id);
       }
       const safe = convertBigInts(post) || post;
-      try {
-        const sanitized = escapeAllStrings(safe, ['content', 'description']);
-        // viewData aus `safe` bauen: pageTitle/metaDescription werden von EJS
-        // selbst escaped, sonst käme es zu doppeltem Escaping im <title>.
-        const viewData = await buildReadPostViewData(req, res, safe, categories);
-        // Prevent caching of personalized HTML (admin vs non-admin)
-        applySsrNoCache(res, { varyCookie: true });
-        return res.render('readPost', { post: sanitized, ...viewData });
-      } catch (_e) {
-        const viewData = await buildReadPostViewData(req, res, safe, categories);
-        applySsrNoCache(res, { varyCookie: true });
-        return res.render('readPost', { post: safe, ...viewData });
-      }
+      const viewData = await buildReadPostViewData(req, res, safe, categories);
+      // Prevent caching of personalized HTML (admin vs non-admin)
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('readPost', { post: safe, ...viewData });
     } catch (error) {
       console.error('Error loading the blog post by id', error);
       if (error instanceof PostControllerException) {
@@ -379,17 +359,9 @@ postRouter.get('/:maybeId',
       const categories = await categoryController.getAllCategories();
       if (post && post.id) incrementViews(req, post.id);
       const safe = convertBigInts(post) || post;
-      try {
-        const sanitized = escapeAllStrings(safe, ['content', 'description']);
-        // viewData aus `safe` bauen (siehe Kommentar in der /id/:postId-Route)
-        const viewData = await buildReadPostViewData(req, res, safe, categories);
-        applySsrNoCache(res, { varyCookie: true });
-        return res.render('readPost', { post: sanitized, ...viewData });
-      } catch (_e) {
-        const viewData = await buildReadPostViewData(req, res, safe, categories);
-        applySsrNoCache(res, { varyCookie: true });
-        return res.render('readPost', { post: safe, ...viewData });
-      }
+      const viewData = await buildReadPostViewData(req, res, safe, categories);
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('readPost', { post: safe, ...viewData });
     } catch (error) {
       console.error('Error loading the blog post by numeric id', error);
       if (error instanceof PostControllerException) {
@@ -440,13 +412,12 @@ postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
     }
 
     const response = convertBigInts(posts) || posts;
-    const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
     const isAdmin = getSsrAdmin(res);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     const extraParams = yearParam ? `&year=${yearParam}` : '';
     const pagination = buildPagination(page, total, '/blogpost/archive', extraParams);
     applySsrNoCache(res, { varyCookie: true });
-    return res.render('archiv', { posts: withExcerpts(safeResponse), archiveYears, isAdmin, csrfToken, pagination });
+    return res.render('archiv', { posts: withExcerpts(response), archiveYears, isAdmin, csrfToken, pagination });
   } catch (error) {
     console.error('Error loading archived blog posts', error);
     const isAdmin = getSsrAdmin(res);

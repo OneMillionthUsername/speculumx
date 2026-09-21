@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint)",
+      "Bash(grep -E \"\\\\.ejs$\")",
+      "Bash(git checkout:*)",
+      "Bash(grep -r \"ai-modal-header\\\\|ai-modal-content\\\\|ai-title-suggestion\" /home/deanm/source/speculumx/public/assets/js/ /home/deanm/source/speculumx/views/ --include=*.js --include=*.ejs)",
+      "Read(//tmp/**)",
+      "Bash(/tmp/used_classes.txt:*)",
+      "Bash(__NEW_LINE_673251ea452a4cf2__ echo:*)",
+      "Bash(grep -n \"btn\\\\|container\\\\|row\\\\|col-\\\\|form-control\\\\|d-flex\\\\|d-block\\\\|d-none\\\\|mb-\\\\|mt-\\\\|py-\\\\|px-\\\\|text-center\\\\|justify-content\\\\|alert-\\\\|badge\\\\|card\\\\|modal\\\\|form-check\" /home/deanm/source/speculumx/views/*.ejs)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:speculumx.at)",
+      "Bash(curl -s https://speculumx.at/blogpost/the-accidental-bot-trap)",
+      "Bash(node -e \":*)",
+      "Bash(curl -s https://speculumx.at/posts)",
+      "Bash(grep -n \"^\\\\.card {$\" /home/deanm/source/speculumx/public/assets/css/radical.css)",
+      "Bash(grep -n \"link.*stylesheet\\\\|href.*\\\\.css\" /home/deanm/source/speculumx/views/layout.ejs /home/deanm/source/speculumx/views/*.ejs)",
+      "Bash(grep -rn styles*= /home/deanm/source/speculumx/public/assets/js/)",
+      "Bash(grep -r \"prism\\\\|highlight\\\\|codesample\" /home/deanm/source/speculumx --include=*.js --include=*.ejs --include=*.json)",
+      "Bash(grep -r \"Prism\\\\|prismjs\" /home/deanm/source/speculumx --include=*.js --include=*.html --include=*.ejs)",
+      "Bash(grep -n \"prism-okaidia\\\\|prism-okaidia.min.css\" /home/deanm/source/speculumx/views/*.ejs)",
+      "Bash(cross-env NODE_OPTIONS=--experimental-vm-modules npx jest tests/sanitization.test.js tests/utils.test.js)",
+      "Bash(NODE_OPTIONS=--experimental-vm-modules npx jest tests/sanitization.test.js tests/utils.test.js)",
+      "Bash(gh run:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

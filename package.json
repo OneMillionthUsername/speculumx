@@ -28,7 +28,11 @@
     "sanitize-db": "node scripts/sanitize-db-posts.js",
     "sanitize-db:dry": "node scripts/sanitize-db-posts.js --dry-run",
     "sanitize-db:prod": "node scripts/run-sanitize-prod.mjs",
-    "sanitize-db:prod:dry": "node scripts/run-sanitize-prod.mjs --dry-run"
+    "sanitize-db:prod:dry": "node scripts/run-sanitize-prod.mjs --dry-run",
+    "unescape-db": "node scripts/unescape-db.mjs",
+    "unescape-db:dry": "node scripts/unescape-db.mjs --dry-run",
+    "unescape-db:prod": "node scripts/run-unescape-prod.mjs",
+    "unescape-db:prod:dry": "node scripts/run-unescape-prod.mjs --dry-run"
   },
   "repository": {
     "type": "git",

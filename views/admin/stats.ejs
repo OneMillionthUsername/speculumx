@@ -86,6 +86,15 @@
           const data = (section && section.data) || [];
           if (!data.length) return '';
 
+          // Log-Daten (URLs, Referrer, User-Agents) sind angreifer-kontrollierbar
+          // und müssen vor der Roh-Interpolation escaped werden
+          const esc = (s) => String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
           const showMethod = opts.showMethod || false;
           const showProtocol = opts.showProtocol || false;
           const labelHeader = opts.labelHeader || 'Pfad';
@@ -95,10 +104,10 @@
           const maxHits = Math.max(...rows.map(r => r.hits ? r.hits.count : 0), 1);
 
           let html = '<section class="stats-section">';
-          html += '<h3 class="stats-section-title">' + title + '</h3>';
+          html += '<h3 class="stats-section-title">' + esc(title) + '</h3>';
           html += '<div class="stats-table-wrap"><table class="stats-table">';
           html += '<thead><tr>';
-          html += '<th class="stats-th-label">' + labelHeader + '</th>';
+          html += '<th class="stats-th-label">' + esc(labelHeader) + '</th>';
           if (showMethod) html += '<th>Method</th>';
           if (showProtocol) html += '<th>Protocol</th>';
           html += '<th>Hits</th><th>%</th>';
@@ -119,9 +128,9 @@
             if (isStatusCodes) {
               html += '<span class="stats-status-dot ' + statusClass(row.data) + '"></span>';
             }
-            html += (row.data || '–') + '</td>';
-            if (showMethod) html += '<td>' + (row.method || '') + '</td>';
-            if (showProtocol) html += '<td>' + (row.protocol || '') + '</td>';
+            html += (row.data ? esc(row.data) : '–') + '</td>';
+            if (showMethod) html += '<td>' + esc(row.method || '') + '</td>';
+            if (showProtocol) html += '<td>' + esc(row.protocol || '') + '</td>';
             html += '<td>' + fmtNum(hits) + '</td>';
             html += '<td class="stats-td-bar"><span class="stats-bar" style="width:' + barWidth + '%"></span><span class="stats-bar-label">' + pct.toFixed(1) + '%</span></td>';
             html += '<td>' + fmtNum(row.visitors ? row.visitors.count : 0) + '</td>';

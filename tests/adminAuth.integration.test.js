@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 
 // Mock heavy dependencies to prevent side effects during import
 jest.unstable_mockModule('../utils/utils.js', () => ({
-  escapeAllStrings: (obj) => obj,
+  sanitizeInputStrings: (obj) => obj,
   sanitizeFilename: (n) => n,
 }));
 const mockGetAdminById = jest.fn();

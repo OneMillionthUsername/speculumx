@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 
 // Mock heavy dependencies used by securityMiddleware to avoid side-effects and module re-linking
 jest.unstable_mockModule('../utils/utils.js', () => ({
-  escapeAllStrings: (obj) => obj,
+  sanitizeInputStrings: (obj) => obj,
   sanitizeFilename: (n) => n,
 }));
 const mockGetAdminById = jest.fn().mockResolvedValue({ username: 'default', full_name: 'Default User' });

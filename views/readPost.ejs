@@ -2,9 +2,9 @@
     pageTitle = 'Blogpost - Sub specie aeternitatis';
     metaDescription = 'Philosophy, Tech, Science, News and me';
     usePrism = true;
-    extraHead = typeof post !== 'undefined' && post && post.id ? `<meta name="post-id" content="${post.id}">` : '';
+    extraHead = typeof post !== 'undefined' && post && post.id ? `<meta name="post-id" content="${Number(post.id)}">` : '';
     if (typeof post !== 'undefined' && post && post.slug) {
-        extraHead += `<link rel="canonical" href="https://speculumx.at/blogpost/${post.slug}">`;
+        extraHead += `<link rel="canonical" href="https://speculumx.at/blogpost/${encodeURIComponent(post.slug)}">`;
     }
 %>
 

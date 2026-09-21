@@ -2,8 +2,6 @@ import logger from '../utils/logger.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import Comment from '../models/commentModel.js';
 import { CommentControllerException } from '../models/customExceptions.js';
-import { sanitizeHtml } from '../utils/sanitizer.js';
-import { escapeHtml } from '../utils/utils.js';
 import { normalizePublished } from '../utils/normalizers.js';
 import contactMailService from '../services/contactMailService.js';
 
@@ -25,18 +23,14 @@ async function createCommentRecord(postId, body) {
     );
   }
 
-  // Server-side sanitization: allow only safe HTML in comment text and
-  // ensure username is plain text (no tags/styles). This prevents stored
-  // content from containing inline style attributes that violate CSP.
-  try {
-    value.text = sanitizeHtml(String(value.text || ''));
-  } catch (_e) {
-    value.text = escapeHtml(String(value.text || ''));
-  }
+  // Comments are plain text: stored RAW, escaped at output (EJS `<%= %>`).
+  // Notification mails are text/plain with their own header sanitization
+  // in contactMailService, so raw text is fine there too.
+  value.text = String(value.text || '');
   if (!value.username || String(value.username).trim() === '') {
     value.username = 'Anonym';
   } else {
-    value.username = escapeHtml(String(value.username));
+    value.username = String(value.username).trim();
   }
 
   const result = await DatabaseService.createComment(postId, value);
