@@ -2,8 +2,12 @@
 services:
   app:
     image: nullhasvalue/expressblog:latest
-    # Container-Prozess läuft mit dediziertem Docker-User (UID 119)
-    # und Gruppe 34 (www-data), damit Dateirechte zu nginx/www-data passen.
+    # Container-Prozess läuft als 'node' (Container-uid/gid 1000, siehe Dockerfile USER node).
+    # Kein eigenes `user:` mehr hier (siehe Commit e3761fc) — stattdessen werden
+    # Host-Rechte für rw-Bind-Mounts (siehe volumes unten) per ACL auf die
+    # gemappte Host-uid des rootless-Docker-Users vergeben, nicht per chown.
+    # Aktuell (deploy-User, /etc/subuid deploy:165536:65536): Container-uid 1000
+    # entspricht Host-uid 166535 — siehe getfacl auf ./public/assets/media.
     ports:
       - "127.0.0.1:3000:3000" # Erreichbar für Host-Nginx (Prod) & Docker-Nginx (Dev)
     build:
