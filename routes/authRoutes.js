@@ -13,6 +13,7 @@ import { IS_PRODUCTION } from '../config/config.js';
 import logger from '../utils/logger.js';
 import csrfProtection from '../utils/csrf.js';
 import { getClientIp, getSafeRefererPath } from '../utils/requestUtils.js';
+import { AdminAccountLockedException } from '../models/customExceptions.js';
 
 /**
  * Authentication routes
@@ -155,6 +156,20 @@ authRouter.post('/login',
       const wantsHtml = req.accepts && req.accepts('html') && !req.is('application/json');
       const ip = getClientIp(req);
       const attemptedUsername = req.body?.username || 'unknown';
+      if (error instanceof AdminAccountLockedException) {
+        // Expected during brute-force lockouts, not a server error. The answer
+        // matches a wrong password so it does not reveal that the account exists.
+        logger.authEvent('AUTH_LOGIN_LOCKED', {
+          ip,
+          username: attemptedUsername,
+          route: req.originalUrl,
+          reason: 'account_inactive_or_locked',
+        }, 'WARN');
+        if (wantsHtml) {
+          return res.redirect(303, getSafeRefererPath(req, '/createPost?login=error'));
+        }
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      }
       logger.error(`[AUTH AUDIT] Login error for username: ${req.body && req.body.username}`, error);
       logger.authEvent('AUTH_LOGIN_ERROR', {
         ip,

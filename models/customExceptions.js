@@ -7,6 +7,14 @@ export class AdminControllerException extends Error {
   }
 }
 
+// Login refused because the account is deactivated or temporarily locked
+export class AdminAccountLockedException extends AdminControllerException {
+  constructor(message = 'Admin account is inactive or locked') {
+    super(message);
+    this.name = 'AdminAccountLockedException';
+  }
+}
+
 export class CardControllerException extends Error {
   constructor(message, details = null) {
     super(message);

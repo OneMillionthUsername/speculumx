@@ -9,7 +9,7 @@
 import { DatabaseService } from '../databases/mariaDB.js';
 import { Admin } from '../models/adminModel.js';
 import bcrypt from 'bcrypt';
-import { AdminControllerException } from '../models/customExceptions.js';
+import { AdminAccountLockedException, AdminControllerException } from '../models/customExceptions.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -138,7 +138,7 @@ const authenticateAdmin = async (username, password) => {
     const admin = new Admin(value);
     // 3. Account-Status prüfen
     if (!admin.active || (admin.locked_until && new Date() < new Date(admin.locked_until))) {
-      throw new AdminControllerException('Admin account is inactive or locked');
+      throw new AdminAccountLockedException();
     }
         
     const isValidPassword = await bcrypt.compare(password, admin.password_hash);
@@ -158,6 +158,8 @@ const authenticateAdmin = async (username, password) => {
       return null;
     }
   } catch (error) {
+    // Keep the lock signal intact so the login route can answer 401 instead of 500
+    if (error instanceof AdminAccountLockedException) throw error;
     throw new AdminControllerException(`Error during admin authentication: ${error.message}`, error);
   }
 };

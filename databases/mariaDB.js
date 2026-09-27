@@ -1214,10 +1214,11 @@ export const DatabaseService = {
   async getAllCards() {
     let conn;
     try {
-      		conn = await getDatabasePool().getConnection();
-      		const result = await conn.query('SELECT * FROM cards WHERE published = 1 ORDER BY id DESC');
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT * FROM cards WHERE published = 1 ORDER BY id DESC');
+      // No published cards is a valid state (GET /api/cards answered 500 before)
       if (!result || result.length === 0) {
-        throw new Error('No cards found');
+        return [];
       }
       return result.map(card => {
         const converted = { ...convertBigInts(card) };

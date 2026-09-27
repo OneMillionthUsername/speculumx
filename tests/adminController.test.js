@@ -20,7 +20,7 @@ jest.unstable_mockModule('../utils/logger.js', () => ({
 }));
 
 const { default: adminController } = await import('../controllers/adminController.js');
-const { AdminControllerException } = await import('../models/customExceptions.js');
+const { AdminAccountLockedException, AdminControllerException } = await import('../models/customExceptions.js');
 const { Admin } = await import('../models/adminModel.js');
 
 // Minimal valid admin data satisfying the Joi schema
@@ -98,17 +98,19 @@ describe('adminController', () => {
       expect(result).toBeNull();
     });
 
-    it('throws (wrapped) for inactive account', async () => {
+    it('throws AdminAccountLockedException (not wrapped) for inactive account', async () => {
       mockDb.getAdminByUsername.mockResolvedValue(makeAdmin({ active: false }));
-      await expect(adminController.authenticateAdmin('testadmin', 'password123'))
-        .rejects.toThrow('Admin account is inactive or locked');
+      const attempt = adminController.authenticateAdmin('testadmin', 'password123');
+      await expect(attempt).rejects.toThrow(AdminAccountLockedException);
+      await expect(attempt).rejects.toThrow('Admin account is inactive or locked');
     });
 
-    it('throws (wrapped) for locked account', async () => {
+    it('throws AdminAccountLockedException (not wrapped) for locked account', async () => {
       const futureDate = new Date(Date.now() + 3600_000).toISOString();
       mockDb.getAdminByUsername.mockResolvedValue(makeAdmin({ locked_until: futureDate }));
       await expect(adminController.authenticateAdmin('testadmin', 'password123'))
-        .rejects.toThrow('Admin account is inactive or locked');
+        .rejects.toThrow(AdminAccountLockedException);
+      expect(mockBcryptCompare).not.toHaveBeenCalled();
     });
 
     it('returns null and records failure on wrong password', async () => {
