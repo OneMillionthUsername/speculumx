@@ -11,6 +11,7 @@ import {
   SMTP_PASS,
   SMTP_PORT,
   SMTP_SECURE,
+  SMTP_TLS_REJECT_UNAUTHORIZED,
   SMTP_USER,
 } from '../config/config.js';
 
@@ -24,7 +25,7 @@ function getTransporter() {
     port: SMTP_PORT,
     secure: SMTP_SECURE,
     tls: {
-      rejectUnauthorized: false,
+      rejectUnauthorized: SMTP_TLS_REJECT_UNAUTHORIZED,
     },
   };
 
