@@ -24,6 +24,9 @@ describe('SMTP_TLS_REJECT_UNAUTHORIZED', () => {
     ['the default relay on the Docker host', {}],
     ['localhost', { SMTP_HOST: 'localhost' }],
     ['127.0.0.1', { SMTP_HOST: '127.0.0.1' }],
+    ['::1', { SMTP_HOST: '::1' }],
+    // Production: local MTA reached via the server's own public IP
+    ['the production MTA addressed by IP', { SMTP_HOST: '185.44.210.180' }],
   ])('skips certificate verification for %s', async (_label, vars) => {
     const config = await loadConfig(vars);
     expect(config.SMTP_TLS_REJECT_UNAUTHORIZED).toBe(false);

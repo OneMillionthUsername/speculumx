@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { isIP } from 'node:net';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -39,12 +40,14 @@ function parseBoolean(value, defaultValue = false) {
 export const SMTP_HOST = process.env.SMTP_HOST || 'host.docker.internal';
 export const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 export const SMTP_SECURE = parseBoolean(process.env.SMTP_SECURE, false);
-// A relay on the Docker host is reached through names no certificate is issued
-// for, so the SMTP server certificate is verified by default only for remote hosts.
-const LOCAL_SMTP_HOSTS = new Set(['host.docker.internal', 'localhost', '127.0.0.1', '::1']);
+// Certificates are issued for DNS names, so the SMTP server certificate is verified
+// by default only for remote host names: not for a relay on the Docker host and not
+// for an IP address (production reaches its local MTA via the server's own IP).
+const LOCAL_SMTP_HOSTS = new Set(['host.docker.internal', 'localhost']);
+const SMTP_HOST_NORMALIZED = SMTP_HOST.trim().toLowerCase();
 export const SMTP_TLS_REJECT_UNAUTHORIZED = parseBoolean(
   process.env.SMTP_TLS_REJECT_UNAUTHORIZED,
-  !LOCAL_SMTP_HOSTS.has(SMTP_HOST.trim().toLowerCase()),
+  !LOCAL_SMTP_HOSTS.has(SMTP_HOST_NORMALIZED) && isIP(SMTP_HOST_NORMALIZED) === 0,
 );
 export const SMTP_USER = process.env.SMTP_USER || '';
 export const SMTP_PASS = process.env.SMTP_PASS || '';
