@@ -107,6 +107,36 @@ describe('authMiddleware', () => {
       expect(res.status).toHaveBeenCalledWith(401);
       expect(next).not.toHaveBeenCalled();
     });
+
+    it.each([0, false])('returns 401 when the admin account is deactivated (active=%p)', async (active) => {
+      const req = { headers: { authorization: 'Bearer valid' }, cookies: {} };
+      const res = createMockRes();
+      const next = jest.fn();
+
+      mockExtract.mockReturnValue('valid');
+      mockVerify.mockReturnValue({ id: 1, role: 'admin' });
+      mockGetAdminById.mockResolvedValue({ username: 'admin', full_name: 'Admin User', active });
+
+      await authenticateToken(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(req.user).toBeUndefined();
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('accepts an active admin account (active=1)', async () => {
+      const req = { headers: { authorization: 'Bearer valid' }, cookies: {} };
+      const res = createMockRes();
+      const next = jest.fn();
+
+      mockExtract.mockReturnValue('valid');
+      mockVerify.mockReturnValue({ id: 1, role: 'admin' });
+      mockGetAdminById.mockResolvedValue({ username: 'admin', full_name: 'Admin User', active: 1 });
+
+      await authenticateToken(req, res, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('requireAdmin', () => {

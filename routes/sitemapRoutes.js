@@ -39,8 +39,8 @@ sitemapRouter.get('/sitemap.xml', async (req, res) => {
     const staticPages = [
       { url: '/', priority: '1.0', changefreq: 'daily' },
       { url: '/about', priority: '0.8', changefreq: 'monthly' },
-      { url: '/blogpost', priority: '0.9', changefreq: 'daily' },
-      { url: '/archiv', priority: '0.7', changefreq: 'weekly' },
+      { url: '/posts', priority: '0.9', changefreq: 'daily' },
+      { url: '/blogpost/archive', priority: '0.7', changefreq: 'weekly' },
     ];
 
     const now = new Date().toISOString();
@@ -66,7 +66,8 @@ sitemapRouter.get('/sitemap.xml', async (req, res) => {
         logger.debug(`Adding ${posts.length} blog posts to sitemap`);
 
         posts.forEach(post => {
-          const postDate = post.created_at ? new Date(post.created_at).toISOString() : now;
+          const lastChange = post.updated_at || post.created_at;
+          const postDate = lastChange ? new Date(lastChange).toISOString() : now;
           // XML-sicher: encodeURIComponent entfernt &<>" aus dem Pfadsegment
           const postPath = encodeURIComponent(String(post.slug || post.id));
           sitemap += `  <url>

@@ -1,4 +1,5 @@
 import logger from '../utils/logger.js';
+import { getClientIp } from '../utils/requestUtils.js';
 
 /**
  * Middleware für strukturiertes Request-/Access-Logging.
@@ -14,16 +15,9 @@ export function loggerMiddleware(req, res, next) {
     return next();
   }
   const startTime = Date.now();
-  // req.ip respects Express trust proxy setting (reads X-Forwarded-For in production).
-  // X-Real-IP is a single-value fallback set by Nginx (proxy_set_header X-Real-IP $remote_addr).
-  // X-Forwarded-For may contain a comma-separated list; take the first (original client).
-  const xForwardedFor = req.headers['x-forwarded-for'];
-  const firstForwardedIp = xForwardedFor ? xForwardedFor.split(',')[0].trim() : null;
-  const ip =
-    firstForwardedIp ||
-    req.headers['x-real-ip'] ||
-    req.ip ||
-    req.socket?.remoteAddress;
+  // req.ip respects the Express trust proxy setting; the first X-Forwarded-For
+  // entry is client-controlled and would let anyone forge the logged IP.
+  const ip = getClientIp(req);
   // Request loggen
   // logger.debug(`Incoming request: ${req.method} ${req.url}`, {
   //   ip,

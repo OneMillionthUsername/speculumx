@@ -5,6 +5,7 @@ import postController, { getCurrentPostsPaginated, PAGE_SIZE } from './postContr
 import cardController, { CARDS_PER_PAGE } from './cardController.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
+import { getClientIp } from '../utils/requestUtils.js';
 import contactMailService from '../services/contactMailService.js';
 
 async function showHomePage(req, res) {
@@ -56,7 +57,8 @@ async function showHomePage(req, res) {
       cards = result.cards;
       total = result.total;
       const totalCardPages = Math.ceil(total / CARDS_PER_PAGE);
-      if(cardsPage > totalCardPages && totalCardPages >= 0 || cardsPage < 1) {
+      // Page 1 must always render, even when there are no published cards
+      if (cardsPage > 1 && cardsPage > totalCardPages) {
         applySsrNoCache(res, { varyCookie: true });
         return res.status(404).render('notFound', { isAdmin, csrfToken });
       }
@@ -105,11 +107,7 @@ async function submitContactForm(req, res) {
   const name = String(req.body?.name || '').trim();
   const email = String(req.body?.email || '').trim();
   const message = String(req.body?.message || '').trim();
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim()
-    || req.headers['x-real-ip']
-    || req.ip
-    || req.socket?.remoteAddress
-    || 'unknown';
+  const ip = getClientIp(req);
   const userAgent = req.get('User-Agent') || 'unknown';
 
   if (honeypot) {

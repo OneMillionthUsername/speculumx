@@ -3,6 +3,7 @@ import { DatabaseService } from '../databases/mariaDB.js';
 import Comment from '../models/commentModel.js';
 import { CommentControllerException } from '../models/customExceptions.js';
 import { normalizePublished } from '../utils/normalizers.js';
+import { getClientIp } from '../utils/requestUtils.js';
 import contactMailService from '../services/contactMailService.js';
 
 async function createCommentRecord(postId, body) {
@@ -52,11 +53,7 @@ async function sendCommentNotification({ req, postId, comment }) {
     const proto = req?.secure || forwardedProto === 'https' ? 'https' : 'http';
     const baseUrl = host ? `${proto}://${host}` : '';
     const postUrl = baseUrl ? `${baseUrl}/blogpost/id/${postId}#comments-section` : `/blogpost/id/${postId}#comments-section`;
-    const ip = req?.headers?.['x-forwarded-for']?.split(',')[0]?.trim()
-      || req?.headers?.['x-real-ip']
-      || req?.ip
-      || req?.socket?.remoteAddress
-      || 'unknown';
+    const ip = getClientIp(req);
     const userAgent = req?.get ? (req.get('User-Agent') || 'unknown') : 'unknown';
 
     await contactMailService.sendCommentNotificationMail({

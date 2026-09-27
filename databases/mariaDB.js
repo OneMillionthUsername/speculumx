@@ -10,6 +10,7 @@ import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags, createSlug } from '../utils/utils.js';
 //import queryBuilder from '../utils/queryBuilder.js';
 import { dbConfig } from '../config/dbConfig.js';
+import { IS_PRODUCTION } from '../config/config.js';
 import logger from '../utils/logger.js';
 import { databaseError } from '../models/customExceptions.js';
 import { normalizePublished } from '../utils/normalizers.js';
@@ -145,6 +146,13 @@ export async function initializeDatabase() {
     logger.info('initializeDatabase: Database pool created successfully');
   } catch (error) {
     logger.error(`initializeDatabase: Database connection failed: ${error.message}`, { stack: error.stack });
+    if (IS_PRODUCTION) {
+      // Never serve mock sample posts in production. Failing lets the container
+      // restart policy retry, e.g. when the app boots before MariaDB after a host reboot.
+      if (pool) await pool.end().catch(() => {});
+      pool = undefined;
+      throw new databaseError(`Database connection failed: ${error.message}`, error);
+    }
     logger.warn('Falling back to mock mode due to database connection failure');
     pool = createMockPool();
     isMockMode = true;
@@ -369,7 +377,7 @@ export async function initializeDatabaseSchema() {
     return true;
   } catch (error) {
     if(isMockMode) {
-      logger.log('Mock-Schema erstellt');
+      logger.info('Mock-Schema erstellt');
       return true;
     }
     logger.error(`Error creating MariaDB schema: ${error.message}`);
@@ -673,7 +681,7 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const rows = await conn.query('SELECT DISTINCT YEAR(created_at) AS year FROM posts WHERE created_at < NOW() - INTERVAL 3 MONTH ORDER BY year DESC');
+      const rows = await conn.query('SELECT DISTINCT YEAR(created_at) AS year FROM posts WHERE published = 1 AND created_at < NOW() - INTERVAL 3 MONTH ORDER BY year DESC');
       if (!rows || rows.length === 0) return [];
       // Normalize to array of numbers
       return rows.map(r => Number(r.year)).filter(y => !Number.isNaN(y));
@@ -712,7 +720,7 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const result = await conn.query('SELECT * FROM posts ORDER BY views DESC LIMIT 5');
+      const result = await conn.query('SELECT * FROM posts WHERE published = 1 ORDER BY views DESC LIMIT 5');
       if(!result || result.length === 0) {
         logger.warn('No posts found for getMostReadPosts');
         return [];
@@ -739,7 +747,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const update = await conn.query('UPDATE posts SET views = views + 1 WHERE id = ?', [postId]);
+      // Assigning updated_at to itself keeps ON UPDATE CURRENT_TIMESTAMP from firing,
+      // so a page view is not mistaken for a content change (e.g. sitemap lastmod)
+      const update = await conn.query('UPDATE posts SET views = views + 1, updated_at = updated_at WHERE id = ?', [postId]);
       if(!update || update.affectedRows === 0) {
         throw new Error('No rows affected');
       }
@@ -1670,14 +1680,14 @@ export const DatabaseService = {
     }
   }, 
 };
-// Graceful Shutdown
-process.on('SIGINT', async () => {
-  console.log('Closing MariaDB connections...');
-  await getDatabasePool().end();
-  process.exit(0);
-});
-process.on('SIGTERM', async () => {
-  console.log('Closing MariaDB connections...');
-  await getDatabasePool().end();
-  process.exit(0);
-});
+/**
+ * Closes the connection pool. Called by the graceful shutdown in server.js
+ * after the HTTP server has drained, so in-flight requests can still query.
+ * @returns {Promise<void>}
+ */
+export async function closeDatabase() {
+  if (!pool) return;
+  const current = pool;
+  pool = undefined;
+  await current.end();
+}

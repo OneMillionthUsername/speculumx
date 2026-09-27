@@ -31,7 +31,8 @@ export default class Comment {
 export const commentSchema = Joi.object({
   id: Joi.number().integer().optional(),
   postId: Joi.number().integer().min(1).required(),
-  username: Joi.string().max(40).optional(),
+  // Same limit as the route validation and the form's maxlength
+  username: Joi.string().max(50).optional(),
   text: Joi.string().min(1).max(1000).required(),
   ip_address: Joi.string().ip().optional(),
   approved: Joi.boolean().optional(),

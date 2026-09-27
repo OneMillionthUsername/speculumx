@@ -22,13 +22,15 @@ import { getDatabasePool } from '../databases/mariaDB.js';
  */
 const uploadRouter = express.Router();
 
-uploadRouter.post('/image', 
+// Authenticate before multer: the file is buffered in memory (up to 25 MB),
+// which must not be possible for anonymous clients.
+uploadRouter.post('/image',
   strictLimiter,
   csrfProtection,
-  imageUpload.single('image'), 
-  validateMediaUpload,
   authenticateToken,
-  requireAdmin, 
+  requireAdmin,
+  imageUpload.single('image'),
+  validateMediaUpload,
   async (req, res) => {
     try {
       if (!req.file) {

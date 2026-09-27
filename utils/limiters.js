@@ -1,6 +1,7 @@
 import { BlockList, isIP } from 'node:net';
 import rateLimit from 'express-rate-limit';
 import logger from './logger.js';
+import { getClientIp } from './requestUtils.js';
 
 /**
  * Rate limiter helpers used across routes.
@@ -29,25 +30,11 @@ for (const entry of whitelistEntries) {
   }
 }
 
-// Normalise IPv4-mapped IPv6 addresses (::ffff:x.x.x.x → x.x.x.x)
-// so that rate-limit counters are consistent regardless of format.
-function normalizeIp(ip) {
-  if (ip && ip.startsWith('::ffff:')) return ip.slice(7);
-  return ip;
-}
-
-function getClientIp(req) {
-  const raw = req.headers['x-forwarded-for']?.split(',')[0].trim()
-    || req.headers['x-real-ip']
-    || req.ip
-    || req.socket.remoteAddress;
-  return normalizeIp(raw);
-}
-
 function isWhitelisted(req) {
   if (whitelistEntries.length === 0) return false;
   const ip = getClientIp(req);
-  return ip ? whitelist.check(ip) : false;
+  const family = isIP(ip);
+  return family !== 0 && whitelist.check(ip, family === 6 ? 'ipv6' : 'ipv4');
 }
 
 // Shared handler that logs every rate-limit block
@@ -65,11 +52,13 @@ function makeHandler(limiterName) {
 }
 
 // --- Rate limiters ---
-// Basis-Konfiguration für alle Limiter
+// Basis-Konfiguration für alle Limiter.
+// Kein eigener keyGenerator: der Default nutzt req.ip (respektiert 'trust proxy')
+// und fasst IPv6-Adressen zu /56-Subnetzen zusammen. Ein aus X-Forwarded-For
+// gelesener Key wäre vom Client frei wählbar und würde jedes Limit aushebeln.
 const baseLimiterConfig = {
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => getClientIp(req) || 'unknown',
   message: { error: 'Rate limit exceeded' },
 };
 

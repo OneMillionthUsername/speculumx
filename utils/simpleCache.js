@@ -81,14 +81,23 @@ function del(key) {
   store.delete(key);
 }
 
+// Remove every entry whose key starts with `prefix` (e.g. all 'posts:' lists)
+function delByPrefix(prefix) {
+  for (const key of [...store.keys()]) {
+    if (key.startsWith(prefix)) del(key);
+  }
+}
+
 function clear() {
   store.clear();
+  totalBytes = 0;
 }
 
 export default {
   set,
   get,
   del,
+  delByPrefix,
   clear,
   getStats: () => ({ entries: store.size, totalBytes }),
 };

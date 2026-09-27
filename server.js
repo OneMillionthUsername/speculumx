@@ -9,44 +9,19 @@
 
 //server.js
 import http from 'http';
-import { join } from 'path'; /* dirname */
-import { fileURLToPath } from 'url';
 import * as config from './config/config.js';
-import app, { waitForApp, getAppStatus } from './app.js'; 
+import app, { waitForApp, getAppStatus } from './app.js';
 import logger from './utils/logger.js';
-import { readFileSync } from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-//const __dirname = dirname(__filename);
+import { closeDatabase } from './databases/mariaDB.js';
 
 // ===========================================
 // SERVER CONFIGURATION & STARTUP
 // ===========================================
 
-// Global server references for graceful shutdown
+// Global server reference for graceful shutdown
 let httpServer = null;
-// let httpsServer = null;
+let shuttingDown = false;
 
-// SSL Configuration
-function loadSSLCertificates() {
-  if (!config.IS_PRODUCTION) {
-    return null; // SSL handled by Plesk/webserver
-  }
-    
-  try {
-    const sslPath = '/etc/letsencrypt/live/speculumx.at';
-    const httpsOptions = {
-      key: readFileSync(join(sslPath, 'privkey.pem')),
-      cert: readFileSync(join(sslPath, 'cert.pem')),
-    };
-    logger.info('SSL certificates loaded successfully');
-    return httpsOptions;
-  } catch (_error) {
-    logger.warn('SSL certificates not found - HTTP only available');
-    logger.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
-    return null;
-  }
-}
 // Main server startup function
 async function startServer() {
   try {
@@ -70,17 +45,9 @@ async function startServer() {
     // Log server configuration
     logServerConfiguration();
 
-    // Load SSL certificates if needed
-    const _httpsOptions = loadSSLCertificates();
-        
-    // Start HTTP server
+    // Start HTTP server (TLS is terminated by Nginx)
     await startHTTPServer();
-        
-    // Start HTTPS server if certificates are available
-    // if (httpsOptions) {
-    //   await startHTTPSServer(httpsOptions);
-    // }
-        
+
     // Setup graceful shutdown handlers
     setupGracefulShutdown();
         
@@ -160,24 +127,6 @@ function startHTTPServer() {
     });
   });
 }
-// Start HTTPS server (development only)
-// function startHTTPSServer(httpsOptions) {
-//   return new Promise((resolve, reject) => {
-//     httpsServer = https.createServer(httpsOptions, app);
-        
-//     httpsServer.listen(config.HTTPS_PORT, config.HOST, () => {
-//       logger.info(`HTTPS Server running on https://${config.HOST}:${config.HTTPS_PORT}`);
-//       logger.info('SSL/TLS enabled - secure connection available');
-//       logger.info('Certificate: Self-signed for development (browser warning normal)');
-//       resolve();
-//     });
-        
-//     httpsServer.on('error', (error) => {
-//       logger.error('HTTPS Server error:', error);
-//       reject(error);
-//     });
-//   });
-// }
 // Log server configuration
 function logServerConfiguration() {
   logger.info('=== Server Configuration ===');
@@ -198,54 +147,41 @@ function setupGracefulShutdown() {
   });
 }
 // Graceful Shutdown Handler
+// Order matters: stop accepting requests and let in-flight ones finish, then
+// close the DB pool they use, then flush the log files, then exit.
 function gracefulShutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.info(`${signal} received - starting graceful shutdown...`);
-    
-  const shutdownPromises = [];
-    
-  if (httpServer) {
-    shutdownPromises.push(
-      new Promise((resolve) => {
-        httpServer.close((err) => {
-          if (err) {
-            logger.error('Error closing HTTP server:', err);
-          } else {
-            logger.info('HTTP server closed');
-          }
-          resolve();
-        });
-      }),
-    );
-  }
-    
-  // if (httpsServer) {
-  //   shutdownPromises.push(
-  //     new Promise((resolve) => {
-  //       httpsServer.close((err) => {
-  //         if (err) {
-  //           logger.error('Error closing HTTPS server:', err);
-  //         } else {
-  //           logger.info('HTTPS server closed');
-  //         }
-  //         resolve();
-  //       });
-  //     }),
-  //   );
-  //}
-    
-  Promise.all(shutdownPromises).then(() => {
-    logger.info('All servers closed successfully');
-    process.exit(0);
-  }).catch((error) => {
-    logger.error('Error during graceful shutdown:', error);
-    process.exit(1);
-  });
-    
+
   // Force exit after 10 seconds
   setTimeout(() => {
     logger.error('Forced shutdown after timeout');
     process.exit(1);
   }, 10000);
+
+  const httpClosed = !httpServer ? Promise.resolve() : new Promise((resolve) => {
+    httpServer.close((err) => {
+      if (err) {
+        logger.error('Error closing HTTP server:', err);
+      } else {
+        logger.info('HTTP server closed');
+      }
+      resolve();
+    });
+  });
+
+  httpClosed
+    .then(() => closeDatabase())
+    .then(() => {
+      logger.info('Database pool closed - shutdown complete');
+      return logger.close();
+    })
+    .then(() => process.exit(0))
+    .catch((error) => {
+      logger.error('Error during graceful shutdown:', error);
+      process.exit(1);
+    });
 }
 // ===========================================
 // GLOBAL ERROR SAFETY NET

@@ -206,18 +206,8 @@ postApiRouter.post('/create',
       if (!result) {
         return res.status(400).json({ error: 'Failed to create blog post' });
       }
-      res.status(201).json({ message: 'Blog post created successfully', postId: Number(result.postId), title: result.title });
-      try {
-        simpleCache.del('posts:all');
-        simpleCache.del('posts:mostRead');
-        simpleCache.del('posts:archive');
-        const currentYear = new Date().getFullYear();
-        for (let year = 2020; year <= currentYear + 1; year++) {
-          simpleCache.del(`posts:archive:${year}`);
-        }
-        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug(`[${_id}] POST /api/blogpost/create: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives`);
-      } catch (e) { void e; }
+      simpleCache.delByPrefix('posts:');
+      res.status(201).json({ message: 'Blog post created successfully', postId: Number(result.id), title: result.title });
     } catch (error) {
       console.error('Error creating new blog post', error);
       res.status(500).json({ error: 'Server failed to create the blogpost' });
@@ -246,18 +236,8 @@ postApiRouter.put('/update/:postId',
       if (!result) {
         return res.status(400).json({ error: 'Failed to update blog post' });
       }
+      simpleCache.delByPrefix('posts:');
       res.status(200).json({ message: 'Blog post updated successfully', postId: Number(result.id ?? postId), title: result.title });
-      try {
-        simpleCache.del('posts:all');
-        simpleCache.del('posts:mostRead');
-        simpleCache.del('posts:archive');
-        const currentYear = new Date().getFullYear();
-        for (let year = 2020; year <= currentYear + 1; year++) {
-          simpleCache.del(`posts:archive:${year}`);
-        }
-        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug(`[${_id}] PUT /api/blogpost/update: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives`);
-      } catch (e) { void e; }
     } catch (error) {
       console.error('Error updating blog post', error);
       res.status(500).json({ error: 'Server failed to update the blogpost' });
@@ -280,18 +260,8 @@ postApiRouter.delete('/delete/:postId',
       if (!result) {
         return res.status(400).json({ error: 'Failed to delete blog post' });
       }
+      simpleCache.delByPrefix('posts:');
       res.status(200).json({ message: 'Blog post deleted successfully', postId: Number(postId) });
-      try {
-        simpleCache.del('posts:all');
-        simpleCache.del('posts:mostRead');
-        simpleCache.del('posts:archive');
-        const currentYear = new Date().getFullYear();
-        for (let year = 2020; year <= currentYear + 1; year++) {
-          simpleCache.del(`posts:archive:${year}`);
-        }
-        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug('[' + _id + '] DELETE /api/blogpost/delete: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives');
-      } catch (e) { void e; }
     } catch (error) {
       logger.error('Error deleting blog post', error);
       res.status(500).json({ error: 'Server failed to delete the blogpost' });

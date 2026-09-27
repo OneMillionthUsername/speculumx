@@ -15,11 +15,11 @@
  */
 
 import express from 'express';
-import categoryController from '../controllers/categoryController.js';
 import postController, { getAllPostsPaginated, getPostsByCategoryPaginated, getPostsByTagPaginated, getArchivedPostsPaginated, PAGE_SIZE } from '../controllers/postController.js';
 import commentsController from '../controllers/commentController.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, applySsrNoCache } from '../utils/utils.js';
+import { getSafeRefererPath } from '../utils/requestUtils.js';
 import simpleCache from '../utils/simpleCache.js';
 import csrfProtection from '../utils/csrf.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
@@ -160,9 +160,10 @@ postRouter.get('/admin/drafts',
 
 // Fallback: /tag?q=xxx → /tag/:tag (when JS doesn't intercept the form)
 postRouter.get('/tag', globalLimiter, (req, res) => {
-  const tag = req.query.q;
+  // ?q=a&q=b yields an array; only a single string is a valid tag
+  const tag = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   if (tag) {
-    return res.redirect(`/blogpost/tag/${encodeURIComponent(tag.trim())}`);
+    return res.redirect(`/blogpost/tag/${encodeURIComponent(tag)}`);
   }
   return res.redirect('/blogpost/all');
 });
@@ -178,7 +179,8 @@ postRouter.get('/tag/:tag', globalLimiter, csrfProtection, async (req, res) => {
     const response = convertBigInts(posts) || posts;
     const isAdmin = getSsrAdmin(res);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-    const pagination = buildPagination(page, total, `/blogpost/tag/${tag}`);
+    // Tags like "C#" would otherwise turn "?page=2" into part of the fragment
+    const pagination = buildPagination(page, total, `/blogpost/tag/${encodeURIComponent(tag)}`);
     applySsrNoCache(res, { varyCookie: true });
     return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin, csrfToken, activeTag: tag, pagination });
   } catch (error) {
@@ -201,7 +203,7 @@ postRouter.get('/category/:categorySlug', globalLimiter, csrfProtection, async (
     const response = convertBigInts(posts) || posts;
     const isAdmin = getSsrAdmin(res);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-    const pagination = buildPagination(page, total, `/blogpost/category/${categorySlug}`);
+    const pagination = buildPagination(page, total, `/blogpost/category/${encodeURIComponent(categorySlug)}`);
     applySsrNoCache(res, { varyCookie: true });
     return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin, csrfToken, category: categorySlug, pagination });
   } catch (error) {
@@ -314,13 +316,12 @@ postRouter.get('/id/:postId',
     const postId = req.params.postId;
     try {
       const post = await postController.getPostById(postId);
-      const categories = await categoryController.getAllCategories();
       // Only increment views if we got a valid post object
       if (post && post.id) {
         incrementViews(req, post.id);
       }
       const safe = convertBigInts(post) || post;
-      const viewData = await buildReadPostViewData(req, res, safe, categories);
+      const viewData = await buildReadPostViewData(req, res, safe);
       // Prevent caching of personalized HTML (admin vs non-admin)
       applySsrNoCache(res, { varyCookie: true });
       return res.render('readPost', { post: safe, ...viewData });
@@ -356,10 +357,9 @@ postRouter.get('/:maybeId',
     const postId = maybe;
     try {
       const post = await postController.getPostById(postId);
-      const categories = await categoryController.getAllCategories();
       if (post && post.id) incrementViews(req, post.id);
       const safe = convertBigInts(post) || post;
-      const viewData = await buildReadPostViewData(req, res, safe, categories);
+      const viewData = await buildReadPostViewData(req, res, safe);
       applySsrNoCache(res, { varyCookie: true });
       return res.render('readPost', { post: safe, ...viewData });
     } catch (error) {
@@ -436,10 +436,9 @@ postRouter.get('/:slug',
     const slug = req.params.slug;
     try {
       const post = await postController.getPostBySlug(slug);
-      const categories = await categoryController.getAllCategories();
       if (post && post.id) incrementViews(req, post.id);
       const safe = convertBigInts(post) || post;
-      const viewData = await buildReadPostViewData(req, res, safe, categories);
+      const viewData = await buildReadPostViewData(req, res, safe);
       applySsrNoCache(res, { varyCookie: true });
       return res.render('readPost', { post: safe, ...viewData });
     } catch (error) {
@@ -473,20 +472,8 @@ postRouter.post('/create',
         return res.redirect(303, '/createPost?error=1');
       }
       const postId = Number(result.postId || result.id);
+      simpleCache.delByPrefix('posts:');
       res.redirect(303, `/blogpost/id/${postId}`);
-      // Invalidate cached lists
-      try {
-        simpleCache.del('posts:all');
-        simpleCache.del('posts:mostRead');
-        simpleCache.del('posts:archive');
-        // Also clear year-specific archive caches
-        const currentYear = new Date().getFullYear();
-        for (let year = 2020; year <= currentYear + 1; year++) {
-          simpleCache.del(`posts:archive:${year}`);
-        }
-        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug(`[${_id}] POST /create: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives`);
-      } catch (e) { void e; }
     } catch (error) {
       console.error('Error creating new blog post', error);
       res.redirect(303, '/createPost?error=1');
@@ -512,19 +499,8 @@ postRouter.post('/update/:postId',
         return res.redirect(303, `/blogpost/update/${postId}?error=1`);
       }
       const finalId = Number(result.id ?? postId);
+      simpleCache.delByPrefix('posts:');
       res.redirect(303, `/blogpost/id/${finalId}`);
-      try {
-        simpleCache.del('posts:all');
-        simpleCache.del('posts:mostRead');
-        simpleCache.del('posts:archive');
-        // Also clear year-specific archive caches
-        const currentYear = new Date().getFullYear();
-        for (let year = 2020; year <= currentYear + 1; year++) {
-          simpleCache.del(`posts:archive:${year}`);
-        }
-        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug(`[${_id}] PUT /update: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives`);
-      } catch (e) { void e; }
     } catch (error) {
       console.error('Error updating blog post', error);
       res.redirect(303, `/blogpost/update/${postId}?error=1`);
@@ -542,15 +518,7 @@ postRouter.post('/delete/:postId',
     logger.debug('DELETE /delete: Attempting to delete post ' + postId);
     logger.debug('DELETE /delete: postId type: ' + typeof postId + ', value: ' + postId);
 
-    const referer = req.headers.referer || '';
-    let returnTo = '/';
-    try {
-      const refUrl = new URL(referer);
-      if (refUrl.hostname === req.hostname) {
-        returnTo = refUrl.pathname;
-      }
-    } catch { /* invalid URL, use default */ }
-
+    const returnTo = getSafeRefererPath(req, '/');
     const wantsJson = req.headers.accept && req.headers.accept.includes('application/json');
 
     if (validationService.isValidIdSchema(postId) === false) {
@@ -567,18 +535,7 @@ postRouter.post('/delete/:postId',
         if (wantsJson) return res.status(404).json({ error: 'Post nicht gefunden oder konnte nicht gelöscht werden' });
         return res.redirect(303, returnTo);
       }
-      try {
-        simpleCache.del('posts:all');
-        simpleCache.del('posts:mostRead');
-        simpleCache.del('posts:archive');
-        // Also clear year-specific archive caches
-        const currentYear = new Date().getFullYear();
-        for (let year = 2020; year <= currentYear + 1; year++) {
-          simpleCache.del(`posts:archive:${year}`);
-        }
-        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug('[' + _id + '] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives');
-      } catch (e) { void e; }
+      simpleCache.delByPrefix('posts:');
       if (wantsJson) return res.json({ success: true, returnTo });
       res.redirect(303, returnTo);
     } catch (error) {

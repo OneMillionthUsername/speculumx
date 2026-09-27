@@ -12,27 +12,7 @@ import { celebrate, Joi, Segments } from 'celebrate';
 import { IS_PRODUCTION } from '../config/config.js';
 import logger from '../utils/logger.js';
 import csrfProtection from '../utils/csrf.js';
-
-function getClientIp(req) {
-  return req.headers['x-forwarded-for']?.split(',')[0].trim()
-    || req.headers['x-real-ip']
-    || req.ip
-    || req.socket?.remoteAddress
-    || 'unknown';
-}
-
-// Nur same-origin Referer als Redirect-Ziel akzeptieren (verhindert Open Redirect)
-function resolveSafeRedirect(req, fallback) {
-  const referer = req.get('Referer');
-  if (!referer) return fallback;
-  try {
-    const refUrl = new URL(referer);
-    if (refUrl.hostname === req.hostname) {
-      return refUrl.pathname + refUrl.search;
-    }
-  } catch { /* invalid URL, use fallback */ }
-  return fallback;
-}
+import { getClientIp, getSafeRefererPath } from '../utils/requestUtils.js';
 
 /**
  * Authentication routes
@@ -159,7 +139,7 @@ authRouter.post('/login',
       }, 'INFO');
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       if (wantsHtml) {
-        return res.redirect(303, resolveSafeRedirect(req, '/createPost'));
+        return res.redirect(303, getSafeRefererPath(req, '/createPost'));
       }
       res.json({
         success: true,
@@ -189,7 +169,7 @@ authRouter.post('/login',
         hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
       });
       if (wantsHtml) {
-        return res.redirect(303, resolveSafeRedirect(req, '/createPost?login=error'));
+        return res.redirect(303, getSafeRefererPath(req, '/createPost?login=error'));
       }
       res.status(500).json({ success: false, error: 'Internal server error' });
     }

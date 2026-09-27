@@ -6,6 +6,7 @@ import { celebrate, Joi, Segments } from 'celebrate';
 import csrfProtection from '../utils/csrf.js';
 import logger from '../utils/logger.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
+import { getSafeRefererPath } from '../utils/requestUtils.js';
 
 /**
  * Routes for Cards (small discoverable items shown on the site).
@@ -151,15 +152,7 @@ cardRouter.post('/:id/delete',
   async (req, res) => {
     const cardId = parseInt(req.params.id);
     const wantsJson = req.headers.accept && req.headers.accept.includes('application/json');
-
-    const referer = req.headers.referer || '';
-    let returnTo = '/cards/manage';
-    try {
-      const refUrl = new URL(referer);
-      if (refUrl.hostname === req.hostname) {
-        returnTo = refUrl.pathname;
-      }
-    } catch { /* invalid URL, use default */ }
+    const returnTo = getSafeRefererPath(req, '/cards/manage');
 
     try {
       await cardController.deleteCard(cardId);

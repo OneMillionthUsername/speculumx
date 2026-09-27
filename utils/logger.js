@@ -258,23 +258,24 @@ class Logger {
     }
   }
 
-  // Graceful shutdown
+  // Graceful shutdown: resolves once buffered lines are flushed to disk
   close() {
-    Object.values(this.logStreams).forEach(stream => {
-      stream.end();
-    });
+    return Promise.all(Object.values(this.logStreams).map(stream =>
+      new Promise(resolve => stream.end(resolve)),
+    ));
   }
 }
 // Singleton Logger exportieren
 const logger = new Logger();
 
 // Tägliche Rotation
-setInterval(() => {
+const rotationTimer = setInterval(() => {
   logger.rotateLogFiles();
 }, 60 * 60 * 1000); // Jede Stunde prüfen
+// Housekeeping only: must not keep scripts or test runs alive on its own
+rotationTimer.unref?.();
 
-// Graceful shutdown handling
-process.on('SIGTERM', () => logger.close());
-process.on('SIGINT', () => logger.close());
+// Streams are closed by the graceful shutdown in server.js (logger.close()),
+// after the last shutdown messages have been written.
 
 export default logger;

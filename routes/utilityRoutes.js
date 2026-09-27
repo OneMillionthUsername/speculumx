@@ -29,12 +29,13 @@ utilityRouter.get('/redirect', (req, res) => {
       config.DOMAIN,
       `www.${config.DOMAIN}`,
     ]);
+    // Fixed messages: echoing the untrusted URL back would allow content injection
     if (url.protocol !== 'https:' || !allowedHosts.has(url.host)) {
-      return res.status(400).end(`Unsupported redirect target: ${req.query.url}`);
+      return res.status(400).type('text/plain').send('Unsupported redirect target');
     }
     res.redirect(url.toString());
   } catch (_e) {
-    return res.status(400).end(`Invalid url: ${req.query.url}`);
+    return res.status(400).type('text/plain').send('Invalid url');
   }
 });
 

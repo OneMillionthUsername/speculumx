@@ -8,6 +8,7 @@
 import * as authService from '../services/authService.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import logger from '../utils/logger.js';
+import { getClientIp } from '../utils/requestUtils.js';
 
 /**
  * Express middleware to authenticate requests using JWT stored in cookies or headers.
@@ -25,7 +26,7 @@ import logger from '../utils/logger.js';
 export async function authenticateToken(req, res, next) {
   const token = authService.extractTokenFromRequest(req);
 
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.headers['x-real-ip'] || req.ip || req.socket?.remoteAddress;
+  const ip = getClientIp(req);
 
   if (!token) {
     logger.auth('[AUTH] 401 No token provided', null, ip);
@@ -48,6 +49,14 @@ export async function authenticateToken(req, res, next) {
     const admin = await DatabaseService.getAdminById(decoded.id);
     if (!admin) {
       logger.auth('[AUTH] 401 Admin not found for token id', null, ip);
+      return res.status(401).json({
+        error: 'Invalid token',
+        message: 'Token is expired or invalid',
+      });
+    }
+    // A deactivated account must lose access immediately, not when its JWT expires
+    if (admin.active === 0 || admin.active === false) {
+      logger.auth('[AUTH] 401 Admin account is deactivated', admin.username, ip);
       return res.status(401).json({
         error: 'Invalid token',
         message: 'Token is expired or invalid',
@@ -82,7 +91,7 @@ export async function authenticateToken(req, res, next) {
  */
 export function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== 'admin') {
-    const ip = req.headers?.['x-forwarded-for']?.split(',')[0].trim() || req.headers?.['x-real-ip'] || req.ip || req.socket?.remoteAddress;
+    const ip = getClientIp(req);
     logger.auth(
       `[AUTH] 403 Admin access denied for user "${req.user?.username ?? 'unauthenticated'}" on ${req.method} ${req.originalUrl}`,
       req.user?.username ?? null,

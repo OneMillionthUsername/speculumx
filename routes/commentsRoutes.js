@@ -4,6 +4,7 @@ import commentsController from '../controllers/commentController.js';
 import { requireAdmin, authenticateToken } from '../middleware/authMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
 import { celebrate, Joi, Segments } from 'celebrate';
+import { getClientIp, getSafeRefererPath } from '../utils/requestUtils.js';
 
 /**
  * Routes for managing comments on posts.
@@ -18,22 +19,11 @@ import { celebrate, Joi, Segments } from 'celebrate';
 const commentsRouter = express.Router();
 
 function buildSafeRedirect(req, fallbackPath, status) {
-  const host = req.get('host');
-  const proto = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http';
-  const base = `${proto}://${host}`;
-  const referer = req.get('Referer');
-  try {
-    if (referer) {
-      const url = new URL(referer, base);
-      if (url.host === host) {
-        if (status) url.searchParams.set('comment', status);
-        url.hash = 'comments-section';
-        return url.pathname + url.search + url.hash;
-      }
-    }
-  } catch { /* ignore */ }
-  const safePath = status ? `${fallbackPath}?comment=${encodeURIComponent(status)}` : fallbackPath;
-  return `${safePath}#comments-section`;
+  // The base is only needed to parse the local path; it never ends up in the result
+  const url = new URL(getSafeRefererPath(req, fallbackPath), 'http://localhost');
+  if (status) url.searchParams.set('comment', status);
+  url.hash = 'comments-section';
+  return url.pathname + url.search + url.hash;
 }
 
 commentsRouter.post('/:postId',
@@ -57,11 +47,7 @@ commentsRouter.post('/:postId',
     const formLoadedAtRaw = String(req.body?.formLoadedAt || '').trim();
     const formLoadedAt = Number(formLoadedAtRaw);
     const now = Date.now();
-    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim()
-      || req.headers['x-real-ip']
-      || req.ip
-      || req.socket?.remoteAddress
-      || 'unknown';
+    const ip = getClientIp(req);
 
     if (honeypot) {
       // Silent fake-success for bots that fill the honeypot field
