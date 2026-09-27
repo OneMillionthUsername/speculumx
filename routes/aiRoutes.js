@@ -1,6 +1,6 @@
 import express from 'express';
 import logger from '../utils/logger.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { ANTHROPIC_API_KEY, GEMINI_API_KEY } from '../config/config.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
@@ -10,7 +10,8 @@ import csrfProtection from '../utils/csrf.js';
  *
  * Primary: Anthropic Claude (claude-sonnet-4-6 → claude-haiku-4-5-20251001)
  *   — only active when ANTHROPIC_API_KEY is set and @anthropic-ai/sdk is installed
- * Fallback: Google Gemini (gemini-3-flash-preview → gemini-2.5-flash → gemini-2.5-flash-lite)
+ * Fallback: Google Gemini via @google/genai
+ *   (gemini-3-flash-preview → gemini-2.5-flash → gemini-2.5-flash-lite)
  */
 const router = express.Router();
 
@@ -25,7 +26,7 @@ if (ANTHROPIC_API_KEY) {
     logger.warn('ANTHROPIC_API_KEY is set but @anthropic-ai/sdk is not installed — falling back to Gemini');
   }
 }
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 const CLAUDE_MODELS = ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'];
 const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
@@ -66,6 +67,12 @@ async function tryClause(prompt, systemInstruction) {
   throw lastError;
 }
 
+// Free-tier quotas are counted per model, so a 429 (or a transient 5xx) on one
+// Gemini model is worth retrying on the next one.
+function isGeminiFallbackError(err) {
+  return [429, 500, 503].includes(err?.status) || isAvailabilityError(err);
+}
+
 async function tryGemini(prompt, systemInstruction, preferredModel) {
   const candidates = [
     preferredModel || DEFAULT_GEMINI_MODEL,
@@ -75,16 +82,22 @@ async function tryGemini(prompt, systemInstruction, preferredModel) {
   for (let i = 0; i < candidates.length; i++) {
     const model = candidates[i];
     try {
-      const generativeModel = genAI.getGenerativeModel({
+      const response = await genAI.models.generateContent({
         model,
-        ...(systemInstruction && { systemInstruction }),
+        contents: prompt,
+        ...(systemInstruction && { config: { systemInstruction } }),
       });
-      const result = await generativeModel.generateContent(prompt);
-      return { text: result.response.text() || '', model };
+      // `text` is undefined when the answer was blocked or had no text part;
+      // report that as an error instead of handing the editor an empty string
+      if (!response.text) {
+        const reason = response.promptFeedback?.blockReason || response.candidates?.[0]?.finishReason || 'no text';
+        throw new Error(`Gemini returned no text (${reason})`);
+      }
+      return { text: response.text, model };
     } catch (err) {
       lastError = err;
       const hasNext = i < candidates.length - 1;
-      if (!isAvailabilityError(err) || !hasNext) throw err;
+      if (!isGeminiFallbackError(err) || !hasNext) throw err;
       logger.warn('Gemini model unavailable, trying next', { failedModel: model, nextModel: candidates[i + 1], error: err.message });
     }
   }
