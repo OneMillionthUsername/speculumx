@@ -1,10 +1,10 @@
 import express from 'express';
-import { strictLimiter } from '../utils/limiters.js';
+import { commentLimiter, strictLimiter } from '../utils/limiters.js';
 import commentsController from '../controllers/commentController.js';
 import { requireAdmin, authenticateToken } from '../middleware/authMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
 import { celebrate, Joi, Segments } from 'celebrate';
-import { getClientIp, getSafeRefererPath } from '../utils/requestUtils.js';
+import { getClientIp, getSafeRefererRedirect } from '../utils/requestUtils.js';
 
 /**
  * Routes for managing comments on posts.
@@ -19,15 +19,14 @@ import { getClientIp, getSafeRefererPath } from '../utils/requestUtils.js';
 const commentsRouter = express.Router();
 
 function buildSafeRedirect(req, fallbackPath, status) {
-  // The base is only needed to parse the local path; it never ends up in the result
-  const url = new URL(getSafeRefererPath(req, fallbackPath), 'http://localhost');
-  if (status) url.searchParams.set('comment', status);
-  url.hash = 'comments-section';
-  return url.pathname + url.search + url.hash;
+  return getSafeRefererRedirect(req, fallbackPath, {
+    query: status ? { comment: status } : {},
+    hash: 'comments-section',
+  });
 }
 
 commentsRouter.post('/:postId',
-  strictLimiter,
+  commentLimiter,
   csrfProtection,
   celebrate({
     [Segments.PARAMS]: Joi.object({

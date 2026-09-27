@@ -1,12 +1,13 @@
 import { BlockList, isIP } from 'node:net';
 import rateLimit from 'express-rate-limit';
 import logger from './logger.js';
-import { getClientIp } from './requestUtils.js';
+import { getClientIp, getSafeRefererRedirect } from './requestUtils.js';
 
 /**
  * Rate limiter helpers used across routes.
- * Exposes `strictLimiter`, `globalLimiter` and `loginLimiter` with
- * sensible defaults and expressive error messages.
+ * Exposes `strictLimiter`, `globalLimiter`, `loginLimiter` and the form
+ * limiters `commentLimiter` / `contactLimiter` with sensible defaults and
+ * expressive error messages.
  *
  * Set RATE_LIMIT_WHITELIST in .env to a comma-separated list of IPs
  * or CIDR ranges that should bypass all rate limits.
@@ -37,8 +38,8 @@ function isWhitelisted(req) {
   return family !== 0 && whitelist.check(ip, family === 6 ? 'ipv6' : 'ipv4');
 }
 
-// Shared handler that logs every rate-limit block
-function makeHandler(limiterName) {
+// Shared handler that logs every rate-limit block; `respond` sends the 429 answer
+function makeHandler(limiterName, respond = (req, res) => res.status(429).json({ error: 'Rate limit exceeded' })) {
   return (req, res, _next, _options) => {
     const ip = getClientIp(req);
     logger.warn(`[RATE-LIMIT] ${limiterName} exceeded`, {
@@ -47,7 +48,7 @@ function makeHandler(limiterName) {
       url: req.originalUrl,
       userAgent: req.get('User-Agent'),
     });
-    res.status(429).json({ error: 'Rate limit exceeded' });
+    respond(req, res);
   };
 }
 
@@ -102,8 +103,45 @@ const loginLimiter = rateLimit({
   },
 });
 
+// Öffentliche Formulare: Menschen schicken eine Handvoll, Spam-Bots hunderte.
+// Formular-POST und JSON-API für Kommentare teilen sich einen Zähler.
+const COMMENT_LIMIT_MESSAGE = 'Zu viele Kommentare in kurzer Zeit. Bitte versuche es später noch einmal.';
+
+const commentLimiter = rateLimit({
+  ...baseLimiterConfig,
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skip: isWhitelisted,
+  handler: makeHandler('commentLimiter', (req, res) => {
+    if (req.is('application/json')) {
+      return res.status(429).json({ error: COMMENT_LIMIT_MESSAGE });
+    }
+    // Classic form post: back to the post, whose comments section shows the notice
+    const postPath = `/blogpost/id/${Number(req.params?.postId) || ''}`;
+    return res.redirect(303, getSafeRefererRedirect(req, postPath, {
+      query: { comment: 'ratelimit' },
+      hash: 'comments-section',
+    }));
+  }),
+});
+
+// Every contact message ends up as an email to the site owner
+const contactLimiter = rateLimit({
+  ...baseLimiterConfig,
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  skip: isWhitelisted,
+  handler: makeHandler('contactLimiter', (req, res) => res.status(429).json({
+    success: false,
+    error: 'Zu viele Nachrichten in kurzer Zeit. Bitte versuche es später noch einmal.',
+  })),
+});
+
 export {
   strictLimiter,
   globalLimiter,
   loginLimiter,
+  commentLimiter,
+  contactLimiter,
+  COMMENT_LIMIT_MESSAGE,
 };

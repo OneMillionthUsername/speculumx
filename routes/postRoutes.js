@@ -22,7 +22,7 @@ import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, app
 import { getSafeRefererPath } from '../utils/requestUtils.js';
 import simpleCache from '../utils/simpleCache.js';
 import csrfProtection from '../utils/csrf.js';
-import { globalLimiter, strictLimiter } from '../utils/limiters.js';
+import { globalLimiter, strictLimiter, COMMENT_LIMIT_MESSAGE } from '../utils/limiters.js';
 import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validateSlug } from '../middleware/validationMiddleware.js';
@@ -51,6 +51,14 @@ function isPageOutOfRange(page, total) {
   return page > totalPages;
 }
 
+// Notices for ?comment=<status> after a comment form post
+const COMMENT_STATUS_MESSAGES = {
+  ok: 'Kommentar gespeichert.',
+  deleted: 'Kommentar gelöscht.',
+  error: 'Kommentar konnte nicht gespeichert werden.',
+  ratelimit: COMMENT_LIMIT_MESSAGE,
+};
+
 function renderPaginationNotFound(req, res) {
   const isAdmin = getSsrAdmin(res);
   const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
@@ -71,12 +79,8 @@ async function buildReadPostViewData(req, res, post) {
   }
   const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
   const status = req && req.query ? String(req.query.comment || '') : '';
-  const commentStatus = status === 'ok' || status === 'error' || status === 'deleted' ? status : null;
-  const commentMessage = commentStatus === 'ok'
-    ? 'Kommentar gespeichert.'
-    : commentStatus === 'deleted'
-      ? 'Kommentar gelöscht.'
-      : (commentStatus === 'error' ? 'Kommentar konnte nicht gespeichert werden.' : null);
+  const commentStatus = Object.hasOwn(COMMENT_STATUS_MESSAGES, status) ? status : null;
+  const commentMessage = commentStatus ? COMMENT_STATUS_MESSAGES[commentStatus] : null;
   // SEO: individueller Seitentitel + Meta-Description pro Blogpost,
   // sonst zeigt Google für alle Beiträge nur den generischen Site-Titel an.
   const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();

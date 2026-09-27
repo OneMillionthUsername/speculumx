@@ -40,3 +40,20 @@ export function getSafeRefererPath(req, fallback) {
     return fallback;
   }
 }
+
+/**
+ * Same-host Referer (or `fallback`) with extra query parameters and a fragment,
+ * e.g. to send a form post back to its page with a status notice.
+ *
+ * @param {import('express').Request} req
+ * @param {string} fallback - Local path used when the Referer is missing or foreign.
+ * @param {{ query?: Record<string, string>, hash?: string }} [options]
+ * @returns {string}
+ */
+export function getSafeRefererRedirect(req, fallback, { query = {}, hash = '' } = {}) {
+  // The base is only needed to parse the local path; it never ends up in the result
+  const url = new URL(getSafeRefererPath(req, fallback), 'http://localhost');
+  for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
+  url.hash = hash;
+  return url.pathname + url.search + url.hash;
+}

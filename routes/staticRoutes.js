@@ -1,7 +1,7 @@
 import express from 'express';
 import staticPageController from '../controllers/staticPageController.js';
 import csrfProtection from '../utils/csrf.js';
-import { strictLimiter } from '../utils/limiters.js';
+import { contactLimiter } from '../utils/limiters.js';
 import { validateFields } from '../middleware/validationMiddleware.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
@@ -28,7 +28,7 @@ staticRouter.get('/admin', csrfProtection, authenticateToken, requireAdmin, stat
 
 staticRouter.post(
   '/contact',
-  strictLimiter,
+  contactLimiter,
   csrfProtection,
   validateFields({
     body: {

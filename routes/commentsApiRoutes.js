@@ -1,6 +1,6 @@
 import express from 'express';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
-import { globalLimiter, strictLimiter } from '../utils/limiters.js';
+import { commentLimiter, globalLimiter, strictLimiter } from '../utils/limiters.js';
 import commentsController from '../controllers/commentController.js';
 import { requireAdmin, authenticateToken } from '../middleware/authMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
@@ -28,7 +28,7 @@ commentsApiRouter.get('/:postId',
 );
 
 commentsApiRouter.post('/:postId',
-  strictLimiter,
+  commentLimiter,
   csrfProtection,
   requireJsonContent,
   celebrate({
