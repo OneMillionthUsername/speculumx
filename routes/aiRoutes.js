@@ -10,8 +10,8 @@ import csrfProtection from '../utils/csrf.js';
  *
  * Primary: Anthropic Claude (claude-sonnet-4-6 → claude-haiku-4-5-20251001)
  *   — only active when ANTHROPIC_API_KEY is set and @anthropic-ai/sdk is installed
- * Fallback: Google Gemini via @google/genai
- *   (gemini-3-flash-preview → gemini-2.5-flash → gemini-2.5-flash-lite)
+ * Fallback: Google Gemini via @google/genai, free tier
+ *   (gemini-3.8-flash → 3.7-flash → 3.6-flash → 3.5-flash → 3.5-flash-lite)
  */
 const router = express.Router();
 
@@ -29,8 +29,10 @@ if (ANTHROPIC_API_KEY) {
 const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 const CLAUDE_MODELS = ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'];
-const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
-const FALLBACK_GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+// All free-tier models. Each has its own daily quota, so the chain multiplies
+// the free requests per day; Flash-Lite comes last (weaker, but ~500 requests/day).
+const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
+const FALLBACK_GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
 
 function isAvailabilityError(err) {
   const msg = String(err?.message || err?.status || '').toLowerCase();
@@ -74,10 +76,13 @@ function isGeminiFallbackError(err) {
 }
 
 async function tryGemini(prompt, systemInstruction, preferredModel) {
-  const candidates = [
+  // The full default chain always follows the requested model, so a client
+  // with an outdated cached script still reaches the current models
+  const candidates = [...new Set([
     preferredModel || DEFAULT_GEMINI_MODEL,
-    ...FALLBACK_GEMINI_MODELS.filter(m => m !== preferredModel),
-  ];
+    DEFAULT_GEMINI_MODEL,
+    ...FALLBACK_GEMINI_MODELS,
+  ])];
   let lastError;
   for (let i = 0; i < candidates.length; i++) {
     const model = candidates[i];

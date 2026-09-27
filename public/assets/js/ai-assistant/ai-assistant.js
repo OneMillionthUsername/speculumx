@@ -68,7 +68,7 @@ import { registerAction } from '../actions/actionRegistry.js';
 
 // Gemini API Konfiguration (Key bleibt serverseitig, alle Calls laufen über /api/ai/generate)
 const GEMINI_CONFIG = {
-  model: 'gemini-3-flash-preview', // Standardmodell, serverseitig mit Fallbacks abgesichert
+  model: 'gemini-3.8-flash', // Standardmodell, serverseitig mit Fallbacks abgesichert
   maxTokens: 2048,
   temperature: 0.7,
 };

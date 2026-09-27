@@ -52,12 +52,12 @@ describe('POST /api/ai/generate (Gemini via @google/genai)', () => {
 
     const res = await request(buildApp())
       .post('/api/ai/generate')
-      .send({ prompt: 'Text', systemInstruction: 'Du bist Lektor.', model: 'gemini-3-flash-preview' });
+      .send({ prompt: 'Text', systemInstruction: 'Du bist Lektor.', model: 'gemini-3.8-flash' });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ success: true, data: { text: 'Verbesserter Text', model: 'gemini-3-flash-preview' } });
+    expect(res.body).toEqual({ success: true, data: { text: 'Verbesserter Text', model: 'gemini-3.8-flash' } });
     expect(mockGenerateContent).toHaveBeenCalledWith({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.8-flash',
       contents: 'Text',
       config: { systemInstruction: 'Du bist Lektor.' },
     });
@@ -68,7 +68,7 @@ describe('POST /api/ai/generate (Gemini via @google/genai)', () => {
 
     await request(buildApp()).post('/api/ai/generate').send({ prompt: 'Text', systemInstruction: '' });
 
-    expect(mockGenerateContent).toHaveBeenCalledWith({ model: 'gemini-3-flash-preview', contents: 'Text' });
+    expect(mockGenerateContent).toHaveBeenCalledWith({ model: 'gemini-3.8-flash', contents: 'Text' });
   });
 
   it('moves on to the next model when the free-tier quota of one model is exhausted', async () => {
@@ -79,18 +79,32 @@ describe('POST /api/ai/generate (Gemini via @google/genai)', () => {
     const res = await request(buildApp()).post('/api/ai/generate').send({ prompt: 'Text' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual({ text: 'vom Fallback', model: 'gemini-2.5-flash' });
+    expect(res.body.data).toEqual({ text: 'vom Fallback', model: 'gemini-3.7-flash' });
     expect(mockGenerateContent.mock.calls.map(([params]) => params.model))
-      .toEqual(['gemini-3-flash-preview', 'gemini-2.5-flash']);
+      .toEqual(['gemini-3.8-flash', 'gemini-3.7-flash']);
   });
 
-  it('answers 429 once every model is out of quota', async () => {
+  it('works through the whole free-tier chain before answering 429', async () => {
     mockGenerateContent.mockRejectedValue(apiError(429, 'RESOURCE_EXHAUSTED'));
 
     const res = await request(buildApp()).post('/api/ai/generate').send({ prompt: 'Text' });
 
     expect(res.status).toBe(429);
-    expect(mockGenerateContent).toHaveBeenCalledTimes(3);
+    expect(mockGenerateContent.mock.calls.map(([params]) => params.model)).toEqual([
+      'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite',
+    ]);
+  });
+
+  it('continues with the current chain when a cached old script requests a retired model', async () => {
+    mockGenerateContent
+      .mockRejectedValueOnce(apiError(404, 'models/gemini-3-flash-preview is not found'))
+      .mockResolvedValueOnce({ text: 'ok' });
+
+    const res = await request(buildApp()).post('/api/ai/generate').send({ prompt: 'Text', model: 'gemini-3-flash-preview' });
+
+    expect(res.body.data.model).toBe('gemini-3.8-flash');
+    expect(mockGenerateContent.mock.calls.map(([params]) => params.model))
+      .toEqual(['gemini-3-flash-preview', 'gemini-3.8-flash']);
   });
 
   it('does not try other models for a non-availability error', async () => {
