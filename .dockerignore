@@ -1,7 +1,21 @@
 node_modules
 npm-debug.log
 .git
-.env
 .claude
 Dockerfile
 docker-compose.yml
+docker-compose.override.yml
+
+# Secrets: env vars are injected at runtime via env_file in docker-compose.yml
+.env
+.env.*
+
+# Local data that must never be baked into an image layer
+*.sql
+db_backup
+ssl
+logs
+coverage
+
+# Uploads are bind-mounted at runtime (see docker-compose.yml volumes)
+public/assets/media
