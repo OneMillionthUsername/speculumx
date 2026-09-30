@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { isIP } from 'node:net';
+import { BlockList, isIP } from 'node:net';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -40,14 +40,25 @@ function parseBoolean(value, defaultValue = false) {
 export const SMTP_HOST = process.env.SMTP_HOST || 'host.docker.internal';
 export const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 export const SMTP_SECURE = parseBoolean(process.env.SMTP_SECURE, false);
-// Certificates are issued for DNS names, so the SMTP server certificate is verified
-// by default only for remote host names: not for a relay on the Docker host and not
-// for an IP address (production reaches its local MTA via the server's own IP).
+// Certificates are issued for DNS names, so a relay on the same machine (Docker host,
+// loopback) is not verified by default. Every other host, including a remote IP
+// address, is verified. A relay that is reached via the server's own public IP must
+// opt out explicitly with SMTP_TLS_REJECT_UNAUTHORIZED=false.
 const LOCAL_SMTP_HOSTS = new Set(['host.docker.internal', 'localhost']);
-const SMTP_HOST_NORMALIZED = SMTP_HOST.trim().toLowerCase();
+const loopbackAddresses = new BlockList();
+loopbackAddresses.addSubnet('127.0.0.0', 8, 'ipv4');
+loopbackAddresses.addAddress('::1', 'ipv6');
+
+function isLocalSmtpHost(host) {
+  const normalized = host.trim().toLowerCase();
+  if (LOCAL_SMTP_HOSTS.has(normalized)) return true;
+  const family = isIP(normalized);
+  return family !== 0 && loopbackAddresses.check(normalized, family === 6 ? 'ipv6' : 'ipv4');
+}
+
 export const SMTP_TLS_REJECT_UNAUTHORIZED = parseBoolean(
   process.env.SMTP_TLS_REJECT_UNAUTHORIZED,
-  !LOCAL_SMTP_HOSTS.has(SMTP_HOST_NORMALIZED) && isIP(SMTP_HOST_NORMALIZED) === 0,
+  !isLocalSmtpHost(SMTP_HOST),
 );
 export const SMTP_USER = process.env.SMTP_USER || '';
 export const SMTP_PASS = process.env.SMTP_PASS || '';
