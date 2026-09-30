@@ -166,6 +166,7 @@ Wichtige Variablen (siehe `.env.example`):
   - `SMTP_PORT` (z. B. `25` oder `587`)
   - `SMTP_SECURE` (`true` für SMTPS, sonst `false`)
   - optional `SMTP_USER`, `SMTP_PASS`
+  - optional `SMTP_TLS_REJECT_UNAUTHORIZED` (Standard: `true`, außer für `host.docker.internal`, `localhost` und Loopback-Adressen; bei einem MTA auf dem eigenen Server über dessen öffentliche IP explizit `false` setzen)
   - `CONTACT_FORM_TO` (Empfängeradresse)
   - optional `CONTACT_FORM_FROM`, `CONTACT_FORM_SUBJECT_PREFIX`
   - Kommentar-Benachrichtigungen:
