@@ -11,7 +11,7 @@
     <% if (typeof leadPost !== 'undefined' && leadPost) { %>
     <article class="lead-post<%= leadPost.previewImage && leadPost.previewImage.src ? ' lead-post--image' : '' %>">
         <% if (leadPost.previewImage && leadPost.previewImage.src) { %>
-        <img class="lead-post-image" src="<%= leadPost.previewImage.src %>"<% if (leadPost.previewImage.srcset) { %> srcset="<%= leadPost.previewImage.srcset %>" sizes="(max-width: 860px) 100vw, 480px"<% } %> alt="" loading="lazy" decoding="async">
+        <img class="lead-post-image" src="<%= leadPost.previewImage.src %>"<% if (leadPost.previewImage.srcset) { %> srcset="<%= leadPost.previewImage.srcset %>" sizes="(max-width: 860px) 100vw, 480px"<% } %> alt="" decoding="async">
         <% } %>
         <div class="lead-post-body">
             <p class="lead-post-label">Aktuell</p>

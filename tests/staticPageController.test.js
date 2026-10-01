@@ -12,7 +12,7 @@ jest.unstable_mockModule('../databases/mariaDB.js', () => ({
   DatabaseService: mockDb,
 }));
 
-const { default: staticPageController, excerptAtWordEnd } = await import('../controllers/staticPageController.js');
+const { default: staticPageController, excerptAtWordEnd, resolvePreviewImage } = await import('../controllers/staticPageController.js');
 
 function createReq(query = {}) {
   return { ip: '127.0.0.1', query, get: () => undefined, csrfToken: () => 'token' };
@@ -80,6 +80,16 @@ describe('staticPageController.showHomePage lead post', () => {
     expect(data.featuredPosts.map(p => p.slug)).toEqual(['post-3', 'post-2', 'post-1']); // unchanged for the original theme
   });
 
+  it('uses the first image of the newest post as it is stored (uploads have no -344/-688 variants)', async () => {
+    const preview_source = '<p>Text</p><p><img src="/assets/media/2026/09/mein-beitrag-1.webp" alt=""></p><img src="/assets/media/2026/09/mein-beitrag-2.webp">';
+    mockDb.getPublishedPostsForHome.mockResolvedValue([homePost(3, { preview_source }), homePost(2)]);
+    const res = createRes();
+
+    await staticPageController.showHomePage(createReq(), res);
+
+    expect(res.render.mock.calls[0][1].leadPost.previewImage).toEqual({ src: '/assets/media/2026/09/mein-beitrag-1.webp', srcset: null });
+  });
+
   it('has no leadPost without published posts', async () => {
     mockDb.getPublishedPostsForHome.mockResolvedValue([]);
     const res = createRes();
@@ -87,6 +97,31 @@ describe('staticPageController.showHomePage lead post', () => {
     await staticPageController.showHomePage(createReq(), res);
 
     expect(res.render.mock.calls[0][1].leadPost).toBeNull();
+  });
+});
+
+describe('resolvePreviewImage', () => {
+  it('returns the first image URL unchanged', () => {
+    expect(resolvePreviewImage('<p><img class="x" src="/assets/media/2026/09/a-1.webp" alt="A"></p>')).toEqual({ src: '/assets/media/2026/09/a-1.webp', srcset: null });
+    expect(resolvePreviewImage('<img src="https://example.org/a.jpg">')).toEqual({ src: 'https://example.org/a.jpg', srcset: null });
+  });
+
+  it('reduces an own absolute-path URL with a prefix to the site path', () => {
+    expect(resolvePreviewImage('<img src="../assets/media/a-1.webp">').src).toBe('/assets/media/a-1.webp');
+  });
+
+  it('finds the image when the source is HTML-escaped', () => {
+    expect(resolvePreviewImage('&lt;img src=&quot;/assets/media/a-1.webp&quot;&gt;').src).toBe('/assets/media/a-1.webp');
+  });
+
+  it('yields no image without an img tag or with an unusable source', () => {
+    const none = { src: null, srcset: null };
+    expect(resolvePreviewImage('<p>Nur Text</p>')).toEqual(none);
+    expect(resolvePreviewImage('')).toEqual(none);
+    expect(resolvePreviewImage(undefined)).toEqual(none);
+    expect(resolvePreviewImage('<img src="data:image/png;base64,AAAA">')).toEqual(none);
+    expect(resolvePreviewImage('<img src="javascript:alert(1)">')).toEqual(none);
+    expect(resolvePreviewImage('<img src="bild.webp">')).toEqual(none);
   });
 });
 
