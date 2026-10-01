@@ -14,11 +14,34 @@ Moderne Blog-Plattform auf Basis von Node.js, Express 5 und MariaDB mit SSR (EJS
 
 - Blogposts mit Slugs, Archiv, Kategorie-Filter und „Most Read“
 - Kommentar-Funktion (SSR + API)
+- Volltextsuche über Titel, Inhalt und Tags (SSR + Live-Vorschläge)
+- Wählbare Themes mit austauschbaren Hintergründen (`soft`, `radical`)
 - Karten-/Info-Elemente (Cards) inkl. API und SSR-Routen
 - Medien-Upload mit Multer + Dateityp-Prüfung
 - Admin-Login über JWT (Cookie-basiert)
 - AI-Endpoint für Textgenerierung (`/api/ai/generate`, admin-geschützt)
 - Sitemap/Robots-Auslieferung
+
+## Design (Themes)
+
+Das Aussehen der öffentlichen Seiten wird über eine Theme-Registry (`config/themes.js`) gewählt. `views/layout.ejs` bindet nur ein, was das aktive Theme dort auflistet (Schriften, Stylesheets, Skripte, Navbar).
+
+| Variable | Werte | Standard |
+| --- | --- | --- |
+| `BLOG_THEME` | `soft` (hell, weich, matt) · `radical` (das bisherige dunkle Design, unverändert) | `soft` |
+| `BLOG_BACKDROP` | nur für `soft`: `herbst` · `winter` · `nebel` · `fruehling` · `sommer` | `herbst` |
+
+Ungültige Werte fallen auf den Standard zurück und werden beim Start im Log gemeldet. Umgeschaltet wird per Umgebungsvariable und Neustart, z. B. `BLOG_THEME=radical` für das alte Design.
+
+- **Hintergrund tauschen:** Jeder Hintergrund ist ein Farbblock in `public/assets/css/themes/soft/backdrops.css` (`[data-backdrop="…"]`). Seiten, Flächen, Akzente und Text leiten sich daraus ab. Ein neuer Hintergrund ist ein kopierter Block plus ein Eintrag in `config/themes.js`.
+- **Neues Theme:** CSS unter `public/assets/css/themes/<id>/` anlegen, Eintrag in `THEMES` ergänzen, Navbar-Partial bei Bedarf eigenständig (`views/partials/navbar<Name>.ejs`).
+- **CSP:** Theme-Skripte liegen als externe Dateien unter `/assets/js/…` (keine Inline-Handler, Inline-Skripte nur mit Nonce).
+
+## Suche
+
+- `GET /search?q=…` durchsucht veröffentlichte Posts nach Titel, Inhalt und Tags (alle Wörter müssen vorkommen; Groß-/Kleinschreibung und Akzente werden ignoriert), sortiert nach Relevanz (Titel vor Tags vor Inhalt), paginiert und mit hervorgehobenen Treffern.
+- `GET /api/blogpost/search?q=…` liefert Vorschläge für die Live-Suche in der Navbar des `soft`-Themes (`/` fokussiert das Suchfeld).
+- Die bestehende Tag-Suche (`/blogpost/tag/:tag`) bleibt erhalten.
 
 ## Sicherheit
 

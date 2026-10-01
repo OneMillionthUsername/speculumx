@@ -533,6 +533,22 @@ export const getPostsByTagPaginated = async (tag, page) => {
   return { posts: validateAndMap(posts), total };
 };
 
+export const searchPostsPaginated = async (terms, page) => {
+  const offset = (page - 1) * PAGE_SIZE;
+  const [posts, total] = await Promise.all([
+    DatabaseService.searchPostsPaginated(terms, PAGE_SIZE, offset),
+    DatabaseService.getPostsCountBySearch(terms),
+  ]);
+  return { posts: validateAndMap(posts), total };
+};
+
+export const SUGGESTION_LIMIT = 6;
+
+export const searchPostSuggestions = async (terms) => {
+  const rows = await DatabaseService.searchPostTitles(terms, SUGGESTION_LIMIT);
+  return rows.map(r => ({ title: r.title, slug: r.slug }));
+};
+
 export const getArchivedPostsPaginated = async (year, page) => {
   const offset = (page - 1) * PAGE_SIZE;
   const [posts, total] = await Promise.all([

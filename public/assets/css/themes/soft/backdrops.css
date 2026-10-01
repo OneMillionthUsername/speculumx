@@ -1,0 +1,220 @@
+/* ============================================================
+   SOFT THEME — backdrops
+   Selected with <html data-backdrop="…"> (env BLOG_BACKDROP).
+   A backdrop is one block of colour variables; base.css turns the
+   --bd-glow-* values into the soft, flowing colour fields behind
+   the page. All surfaces, accents and text colours derive from the
+   same block, so switching a backdrop re-tints the whole blog.
+
+   The look is light and matte: pastel colour fields on a warm base,
+   translucent paper-like surfaces, deep but muted text and accents.
+
+   Roles
+     --bd-base / --bd-glow-1..5  the page background (glows are pale)
+     --surface*                  cards, panels, inputs
+     --text / --text-dim / -faint, --accent*, --tone-*, --danger …
+                                 all >= 4.5:1 on --surface-solid (checked
+                                 by the contrast script, see PR notes)
+     --shadow-rgb / --overlay    shadow colour, modal dimming
+
+   New backdrop:
+     1. copy a block below and change the values
+     2. add its id to `backdrops` of the soft theme in config/themes.js
+     3. BLOG_BACKDROP=<id>
+   ============================================================ */
+
+/* ── Herbst (default): sunny autumn day — yellow leaves, golden light, sky still blue ── */
+:root,
+[data-backdrop="herbst"] {
+    --bd-base: #fbf1d8;
+    --bd-glow-1: #a9cdea;   /* sky blue, top left */
+    --bd-glow-2: #f6d46f;   /* sunlit yellow leaves, top right */
+    --bd-glow-3: #efae6e;   /* orange leaves, bottom right */
+    --bd-glow-4: #e6a487;   /* terracotta / red maple, bottom left */
+    --bd-glow-5: #f9e2a6;   /* pale gold light, centre */
+    --bd-glow-strength: 0.8;
+
+    --surface: rgba(255, 251, 241, 0.76);
+    --surface-2: rgba(255, 246, 228, 0.88);
+    --surface-solid: #fffaf0;
+    --surface-sunken: #f7ecd6;
+    --line: rgba(110, 72, 30, 0.13);
+    --line-strong: rgba(110, 72, 30, 0.24);
+
+    --text: #3a2a1d;
+    --text-dim: #6b5644;
+    --text-faint: #7f6a56;
+
+    --accent: #a4491b;        /* burnt orange */
+    --accent-strong: #7f3510;
+    --accent-ink: #fffaf0;
+
+    --tone-1: #b04f2a;        /* terra */
+    --tone-2: #8c6000;        /* ochre */
+    --tone-3: #4f6b2c;        /* moss */
+    --tone-4: #7d4d80;        /* plum */
+
+    --danger: #a93a32;
+    --success: #3c6b2b;
+    --warning: #8c6000;
+    --info: #2d6590;
+
+    --shadow-rgb: 120 78 30;
+    --overlay: rgba(58, 42, 28, 0.38);
+}
+
+/* ── Winter: bright frost morning, ice blue, lavender haze ── */
+[data-backdrop="winter"] {
+    --bd-base: #eaf1f8;
+    --bd-glow-1: #b5d0ea;
+    --bd-glow-2: #d9def2;
+    --bd-glow-3: #bfe0e6;
+    --bd-glow-4: #ecd6e4;
+    --bd-glow-5: #f5f8fc;
+    --bd-glow-strength: 0.85;
+
+    --surface: rgba(250, 252, 255, 0.76);
+    --surface-2: rgba(243, 248, 253, 0.88);
+    --surface-solid: #f9fbfe;
+    --surface-sunken: #e6eef6;
+    --line: rgba(40, 70, 105, 0.13);
+    --line-strong: rgba(40, 70, 105, 0.24);
+
+    --text: #1f2d3b;
+    --text-dim: #4a5d72;
+    --text-faint: #5f7388;
+
+    --accent: #2c6491;
+    --accent-strong: #1d4a70;
+    --accent-ink: #f9fbfe;
+
+    --tone-1: #2c6491;
+    --tone-2: #55589a;
+    --tone-3: #2c7570;
+    --tone-4: #86497f;
+
+    --danger: #a93f3b;
+    --success: #2c7650;
+    --warning: #85600a;
+    --info: #2c6491;
+
+    --shadow-rgb: 40 70 110;
+    --overlay: rgba(31, 45, 59, 0.38);
+}
+
+/* ── Nebel: light greige mist, silver sage, dusty lilac ── */
+[data-backdrop="nebel"] {
+    --bd-base: #ecebe6;
+    --bd-glow-1: #c6d0d4;
+    --bd-glow-2: #ddd7c9;
+    --bd-glow-3: #cdd2df;
+    --bd-glow-4: #d4ddcf;
+    --bd-glow-5: #f1efea;
+    --bd-glow-strength: 0.85;
+
+    --surface: rgba(252, 251, 249, 0.76);
+    --surface-2: rgba(247, 246, 242, 0.88);
+    --surface-solid: #fcfbf9;
+    --surface-sunken: #eceae4;
+    --line: rgba(60, 64, 66, 0.13);
+    --line-strong: rgba(60, 64, 66, 0.24);
+
+    --text: #2b2e2f;
+    --text-dim: #555a5c;
+    --text-faint: #6b7072;
+
+    --accent: #3b5f5a;
+    --accent-strong: #29443f;
+    --accent-ink: #fcfbf9;
+
+    --tone-1: #4a6a72;
+    --tone-2: #76651f;
+    --tone-3: #526c45;
+    --tone-4: #6c5b80;
+
+    --danger: #a3453d;
+    --success: #3d6c43;
+    --warning: #80600c;
+    --info: #3a6882;
+
+    --shadow-rgb: 60 66 70;
+    --overlay: rgba(43, 46, 47, 0.38);
+}
+
+/* ── Frühling: fresh morning, new leaves, blossom, pollen ── */
+[data-backdrop="fruehling"] {
+    --bd-base: #f2f5e2;
+    --bd-glow-1: #c9e4a6;
+    --bd-glow-2: #f5d3da;
+    --bd-glow-3: #fbf0b4;
+    --bd-glow-4: #b9ddd0;
+    --bd-glow-5: #d8e9f3;
+    --bd-glow-strength: 0.85;
+
+    --surface: rgba(253, 255, 247, 0.76);
+    --surface-2: rgba(248, 252, 238, 0.88);
+    --surface-solid: #fdfff7;
+    --surface-sunken: #ebf1d8;
+    --line: rgba(60, 85, 40, 0.13);
+    --line-strong: rgba(60, 85, 40, 0.24);
+
+    --text: #26331f;
+    --text-dim: #4d5e41;
+    --text-faint: #627355;
+
+    --accent: #9a3c58;
+    --accent-strong: #762a42;
+    --accent-ink: #fdfff7;
+
+    --tone-1: #a2425d;
+    --tone-2: #826400;
+    --tone-3: #46742a;
+    --tone-4: #4d6a98;
+
+    --danger: #a93f3b;
+    --success: #3d742c;
+    --warning: #826400;
+    --info: #3d6d97;
+
+    --shadow-rgb: 70 95 50;
+    --overlay: rgba(38, 51, 31, 0.38);
+}
+
+/* ── Sommer: bright day by the sea, sky, sun, coral, sea glass ── */
+[data-backdrop="sommer"] {
+    --bd-base: #f9f1dd;
+    --bd-glow-1: #a8d3ec;
+    --bd-glow-2: #f8da8c;
+    --bd-glow-3: #f0b69c;
+    --bd-glow-4: #a0d5c5;
+    --bd-glow-5: #fbead0;
+    --bd-glow-strength: 0.8;
+
+    --surface: rgba(255, 252, 244, 0.76);
+    --surface-2: rgba(255, 247, 232, 0.88);
+    --surface-solid: #fffcf4;
+    --surface-sunken: #f4ebd5;
+    --line: rgba(60, 80, 90, 0.13);
+    --line-strong: rgba(60, 80, 90, 0.24);
+
+    --text: #2d2a24;
+    --text-dim: #58564b;
+    --text-faint: #6f6c5e;
+
+    --accent: #17687f;
+    --accent-strong: #0f4c5e;
+    --accent-ink: #fffcf4;
+
+    --tone-1: #b9502f;
+    --tone-2: #8a6400;
+    --tone-3: #2b7766;
+    --tone-4: #35608e;
+
+    --danger: #a93a32;
+    --success: #2f7360;
+    --warning: #8a6400;
+    --info: #2f6489;
+
+    --shadow-rgb: 70 90 90;
+    --overlay: rgba(45, 42, 36, 0.38);
+}

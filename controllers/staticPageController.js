@@ -1,7 +1,8 @@
 import logger from '../utils/logger.js';
-import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl } from '../public/assets/js/shared/text.js';
+import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl, stripHtmlToText } from '../public/assets/js/shared/text.js';
+import { normalizeQuery, getSearchTerms, buildSnippet, splitHighlight } from '../public/assets/js/shared/search.js';
 import categoryController from './categoryController.js';
-import postController, { getCurrentPostsPaginated, PAGE_SIZE } from './postController.js';
+import postController, { getCurrentPostsPaginated, searchPostsPaginated, PAGE_SIZE } from './postController.js';
 import cardController, { CARDS_PER_PAGE } from './cardController.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
@@ -169,6 +170,49 @@ async function showPostsPage(req, res) {
   }
 }
 
+async function showSearchPage(req, res) {
+  const isAdmin = getSsrAdmin(res);
+  const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+  const searchQuery = normalizeQuery(req.query && req.query.q);
+  const terms = getSearchTerms(searchQuery);
+  const page = Math.max(1, parseInt(req.query && req.query.page, 10) || 1);
+  const view = { isAdmin, csrfToken, searchQuery, terms, posts: [], total: 0, pagination: null, categories: [], searchFailed: false };
+
+  try {
+    if (terms.length > 0) {
+      const { posts, total } = await searchPostsPaginated(terms, page);
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      if (page > 1 && (totalPages === 0 || page > totalPages)) {
+        applySsrNoCache(res, { varyCookie: true });
+        return res.status(404).render('notFound', { isAdmin, csrfToken });
+      }
+      view.total = total;
+      // Highlighting is prepared as segments; the template escapes each one and wraps matches in <mark>
+      view.posts = posts.map(p => ({
+        ...p,
+        titleParts: splitHighlight(p.title || '', terms),
+        snippetParts: splitHighlight(buildSnippet(stripHtmlToText(p.content), terms), terms),
+      }));
+      view.pagination = {
+        currentPage: page,
+        totalPages,
+        baseUrl: '/search',
+        extraParams: `&q=${encodeURIComponent(searchQuery)}`,
+      };
+    }
+    if (view.posts.length === 0) {
+      // Something to click on instead of a dead end
+      view.categories = await categoryController.getAllCategories().catch(() => []);
+    }
+  } catch (err) {
+    logger.error('[SEARCH] Error rendering searchResults:', err && err.message);
+    view.searchFailed = true;
+  }
+
+  applySsrNoCache(res, { varyCookie: true });
+  return res.status(view.searchFailed ? 500 : 200).render('searchResults', view);
+}
+
 function getCreateViewBaseContext(req, res) {
   const isAdmin = getSsrAdmin(res);
   const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
@@ -241,6 +285,7 @@ export default {
   redirectAboutHtml,
   submitContactForm,
   showPostsPage,
+  showSearchPage,
   showCreatePostPage,
   showUpdatePostByIdPage,
   showAdminPage,

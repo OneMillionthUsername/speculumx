@@ -1,6 +1,6 @@
 import express from 'express';
 import crypto from 'crypto';
-import postController from '../controllers/postController.js';
+import postController, { searchPostSuggestions } from '../controllers/postController.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import { convertBigInts, parseTags, createSlug } from '../utils/utils.js';
 import simpleCache from '../utils/simpleCache.js';
@@ -11,6 +11,7 @@ import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
+import { normalizeQuery, getSearchTerms } from '../public/assets/js/shared/search.js';
 
 /**
  * JSON-only API routes for blog posts.
@@ -68,6 +69,26 @@ postApiRouter.get('/all', globalLimiter, async (req, res) => {
   } catch (error) {
     logger.error(`[${requestId}] GET /api/blogpost/all route error: ${error.message}`);
     return res.status(500).json({ error: 'Server failed to load blog posts' });
+  }
+});
+
+// Live suggestions for the search field. Has to stay above '/:slug'.
+postApiRouter.get('/search', globalLimiter, async (req, res) => {
+  const query = normalizeQuery(req.query.q);
+  const terms = getSearchTerms(req.query.q);
+  res.set('Cache-Control', 'private, max-age=30');
+  if (terms.length === 0) {
+    return res.json({ query, results: [] });
+  }
+  try {
+    const suggestions = await searchPostSuggestions(terms);
+    const results = suggestions
+      .filter(r => r.slug)
+      .map(r => ({ title: r.title, url: `/blogpost/${encodeURIComponent(r.slug)}` }));
+    return res.json({ query, results });
+  } catch (error) {
+    logger.error(`GET /api/blogpost/search route error: ${error.message}`);
+    return res.status(500).json({ error: 'Search failed' });
   }
 });
 
