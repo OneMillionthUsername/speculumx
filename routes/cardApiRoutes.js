@@ -12,6 +12,12 @@ import logger from '../utils/logger.js';
  */
 const cardApiRouter = express.Router();
 
+// External URL or local path ("//host" is not a local path), see routes/cardRoutes.js
+const imgLinkSchema = Joi.alternatives().try(
+  Joi.string().uri({ scheme: ['http', 'https'] }),
+  Joi.string().pattern(/^\/[^/\0][^\0]*$/),
+);
+
 cardApiRouter.get('/', globalLimiter, async (req, res) => {
   const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   logger.debug(`[${requestId}] GET /api/cards: Request received from ${req.ip}`);
@@ -53,7 +59,8 @@ cardApiRouter.post('/',
       title: Joi.string().min(1).max(255).required(),
       subtitle: Joi.string().max(500).allow('', null),
       link: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
-      img_link: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
+      img_link: imgLinkSchema.required(),
+      published: Joi.boolean().optional(),
     }),
   }),
   authenticateToken,
@@ -86,7 +93,7 @@ cardApiRouter.put('/:id',
       title: Joi.string().min(1).max(255).required(),
       subtitle: Joi.string().max(500).allow('', null),
       link: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
-      img_link: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
+      img_link: imgLinkSchema.required(),
       published: Joi.boolean().optional(),
     }),
   }),

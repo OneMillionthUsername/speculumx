@@ -4,6 +4,7 @@ node_modules/
 *.backup
 *.new
 *.md
+!docs/*.md
 *.sql
 media/
 ssl/

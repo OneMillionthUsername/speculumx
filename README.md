@@ -17,6 +17,7 @@ Moderne Blog-Plattform auf Basis von Node.js, Express 5 und MariaDB mit SSR (EJS
 - Volltextsuche über Titel, Inhalt und Tags (SSR + Live-Vorschläge)
 - Wählbare Themes mit austauschbaren Hintergründen (`soft`, `radical`)
 - Karten-/Info-Elemente (Cards) inkl. API und SSR-Routen
+- Wöchentlich automatisch erzeugte Card-Entwürfe aus Hacker News und RSS-Feeds (siehe unten)
 - Medien-Upload mit Multer + Dateityp-Prüfung
 - Admin-Login über JWT (Cookie-basiert)
 - AI-Endpoint für Textgenerierung (`/api/ai/generate`, admin-geschützt)
@@ -43,6 +44,14 @@ Ungültige Werte fallen auf den Standard zurück und werden beim Start im Log ge
 - `GET /search?q=…` durchsucht veröffentlichte Posts nach Titel, Inhalt und Tags (alle Wörter müssen vorkommen; Groß-/Kleinschreibung und Akzente werden ignoriert), sortiert nach Relevanz (Titel vor Tags vor Inhalt), paginiert und mit hervorgehobenen Treffern.
 - `GET /api/blogpost/search?q=…` liefert Vorschläge für die Live-Suche in der Navbar des `soft`-Themes (`/` fokussiert das Suchfeld).
 - Die bestehende Tag-Suche (`/blogpost/tag/:tag`) bleibt erhalten.
+
+## Wöchentliche Cards
+
+`scripts/weekly-cards.mjs` sammelt einmal pro Woche die wichtigsten Meldungen (Hacker News ab 150 Punkten plus RSS/Atom-Feeds aus `config/cardDigest.js`), lässt ein LLM die zu den Blog-Themen passenden auswählen und legt sie als **unveröffentlichte** Cards an. Freigegeben wird unter `/cards/manage`.
+
+- Bild: ein Bild mit maschinenlesbar belegter freier Lizenz (CC0/Public Domain, lokal gespeichert), sonst eine KI-Illustration, sonst das Standardbild `public/assets/img/card-default.webp`.
+- Aufruf: `node scripts/weekly-cards.mjs [--dry-run | --check-sources | --test-image] [--limit n] [--days n]`; in Entwicklung auch als `npm run cards:weekly:dry`, `cards:check-sources`, `cards:test-image`.
+- Einrichtung auf dem Server (Zeitplan, Variablen, Prüfung): `docs/weekly-cards-server-setup.md`.
 
 ## Sicherheit
 
