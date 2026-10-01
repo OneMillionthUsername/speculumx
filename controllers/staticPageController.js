@@ -26,6 +26,24 @@ export function excerptAtWordEnd(html, maxLen) {
   return `${(lastSpace > maxLen * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()} …`;
 }
 
+/**
+ * Source of the first image in a post's HTML, for teaser cards. Images uploaded through the editor are single
+ * WebP files (routes/uploadRoutes.js); resized -344/-688 variants only exist for discovery cards, so the URL is
+ * used as it is. Anything that is neither an http(s) URL nor a site path (data: URIs, a src cut off by the
+ * preview length) yields no image.
+ * @param {string} html
+ * @returns {{src: string|null, srcset: null}}
+ */
+export function resolvePreviewImage(html) {
+  let url = extractFirstImageUrl(html || '');
+  if (!/^https?:\/\//i.test(url)) {
+    const assetsIdx = url.indexOf('/assets/');
+    if (assetsIdx > 0) url = url.substring(assetsIdx);
+    if (!url.startsWith('/')) return { src: null, srcset: null };
+  }
+  return { src: url, srcset: null };
+}
+
 async function showHomePage(req, res) {
   logger.debug(`[HOME] GET / requested from ${req.ip}, User-Agent: ${req.get('User-Agent')}`);
   logger.debug('[HOME] GET / - Rendering index.ejs');
@@ -39,17 +57,7 @@ async function showHomePage(req, res) {
       title: decodeHtmlEntities(p.title || ''),
       slug: p.slug,
       excerpt: createExcerpt(p.excerpt_source, 150),
-      previewImage: (() => {
-        let url = extractFirstImageUrl(p.preview_source || p.excerpt_source || '');
-        if (!url) return { src: null, srcset: null };
-        if (url.startsWith('http')) return { src: url, srcset: null };
-        const assetsIdx = url.indexOf('/assets/');
-        if (assetsIdx > 0) url = url.substring(assetsIdx);
-        const extIndex = url.lastIndexOf('.');
-        if (extIndex === -1) return { src: url, srcset: null };
-        const base = url.substring(0, extIndex);
-        return { src: base + '-344.webp', srcset: base + '-344.webp 344w, ' + base + '-688.webp 688w' };
-      })(),
+      previewImage: resolvePreviewImage(p.preview_source || p.excerpt_source),
     }));
 
     // The newest post, shown larger as "Aktuell" by themes that have a lead card (soft)
