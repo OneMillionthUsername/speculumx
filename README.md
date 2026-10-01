@@ -34,6 +34,7 @@ Das Aussehen der öffentlichen Seiten wird über eine Theme-Registry (`config/th
 Ungültige Werte fallen auf den Standard zurück und werden beim Start im Log gemeldet. Umgeschaltet wird per Umgebungsvariable und Neustart, z. B. `BLOG_THEME=radical` für das alte Design.
 
 - **Hintergrund tauschen:** Jeder Hintergrund ist ein Farbblock in `public/assets/css/themes/soft/backdrops.css` (`[data-backdrop="…"]`). Seiten, Flächen, Akzente und Text leiten sich daraus ab. Ein neuer Hintergrund ist ein kopierter Block plus ein Eintrag in `config/themes.js`.
+- **Foto als Hintergrund:** Ein Hintergrund kann zusätzlich ein Foto tragen (`--bd-photo-lg`, optional `--bd-photo-sm` für schmale Bildschirme, `--bd-photo-y`, `--bd-veil` in `backdrops.css`). Das Foto liegt unter den Farbflächen und wird von ihnen weich getönt. Fotos importiert `npm run import:backdrops` aus `scripts/backdrop-photos.json` (Download, WebP in zwei Größen, Helligkeitsprüfung); den Bildnachweis (`credit` in `config/themes.js`) zeigt der Footer. Nur lizenzfreie Fotos verwenden (z. B. Pexels-, Unsplash- oder Pixabay-Lizenz, CC0).
 - **Neues Theme:** CSS unter `public/assets/css/themes/<id>/` anlegen, Eintrag in `THEMES` ergänzen, Navbar-Partial bei Bedarf eigenständig (`views/partials/navbar<Name>.ejs`).
 - **CSP:** Theme-Skripte liegen als externe Dateien unter `/assets/js/…` (keine Inline-Handler, Inline-Skripte nur mit Nonce).
 

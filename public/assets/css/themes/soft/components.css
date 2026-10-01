@@ -767,6 +767,8 @@ a.page-link:hover { background: color-mix(in srgb, var(--accent) 18%, transparen
     font-size: 1.15rem;
 }
 .footer-text { margin: 0 0 0.8rem; font-family: var(--font-ui); font-size: 0.72rem; letter-spacing: 0.06em; }
+.footer-credit { margin: -0.4rem 0 0.8rem; font-family: var(--font-ui); font-size: 0.68rem; letter-spacing: 0.04em; color: var(--text-faint); }
+.footer-credit a { color: var(--text-dim); text-decoration: underline; text-underline-offset: 0.2em; }
 .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px; font-family: var(--font-ui); font-size: 0.74rem; }
 .footer-links a { padding: 0.35rem 0.8rem; border-radius: var(--r-pill); color: var(--text-dim); }
 .footer-links a:hover { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }

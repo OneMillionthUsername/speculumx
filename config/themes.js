@@ -9,7 +9,8 @@
  * Add a theme: put its CSS below public/assets/css/themes/<id>/, add an entry to THEMES and
  * select it with BLOG_THEME=<id>.
  * Add a backdrop to an existing theme: add a [data-backdrop="<id>"] block to that theme's
- * backdrops.css and list the id in its `backdrops`.
+ * backdrops.css and list the id in its `backdrops`. A backdrop that uses a photograph carries a
+ * `credit: { author, license, url }`, which the footer shows (see scripts/import-backdrop-photos.mjs).
  */
 
 const FONTS_RADICAL = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap';
@@ -83,7 +84,8 @@ function normalize(value) {
  * @returns {{ id: string, label: string, fontsUrl: string, colorScheme: 'light'|'dark'|null, stylesheets: readonly string[],
  *   scripts: readonly string[], navbar: string, prismStylesheet: string|null,
  *   tinymceContentCss: boolean, backdrops: readonly {id: string, label: string}[],
- *   backdrop: string|null, warnings: string[] }}
+ *   backdrop: string|null, photoCredit: { author: string, license: string, url: string }|null,
+ *   warnings: string[] }}
  */
 export function resolveTheme(themeName, backdropName) {
   const warnings = [];
@@ -111,5 +113,8 @@ export function resolveTheme(themeName, backdropName) {
     }
   }
 
-  return Object.freeze({ ...theme, backdrop, warnings });
+  const chosen = theme.backdrops.find(b => b.id === backdrop);
+  const photoCredit = chosen && chosen.credit ? chosen.credit : null;
+
+  return Object.freeze({ ...theme, backdrop, photoCredit, warnings });
 }

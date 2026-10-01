@@ -4,7 +4,10 @@
 import { getAssetVersion } from '../../config.js';
 import { uploadImageMultipart } from './upload.js';
 import { setupCustomButtons } from './buttons.js';
-import { applyTinyMCETheme } from './theme.js';
+import { applyTinyMCETheme, isSoftTheme } from './theme.js';
+
+// Fraunces/DM Mono for the soft theme's editor content (the iframe does not share the page's fonts)
+const SOFT_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=DM+Mono:wght@400;500&display=swap';
 
 /**
  * Get TinyMCE configuration object
@@ -13,6 +16,7 @@ import { applyTinyMCETheme } from './theme.js';
 export function getTinyMCEConfig() {
   const assetVersion = (typeof getAssetVersion === 'function' && getAssetVersion()) || '';
   const cacheSuffix = assetVersion ? `?v=${encodeURIComponent(assetVersion)}` : '';
+  const soft = isSoftTheme();
   
   return {
     selector: '#content',
@@ -31,7 +35,12 @@ export function getTinyMCEConfig() {
     
     // Skin and icons configuration (local, copied via postinstall)
     skin_url: '/assets/js/tinymce/skins/ui/oxide',
-    content_css: [
+    // The light skin ("oxide") is used for both themes; only the content differs
+    content_css: soft ? [
+      '/assets/js/tinymce/skins/content/default/content.min.css',
+      SOFT_FONTS_URL,
+      '/assets/css/themes/soft/tinymce-content.css',
+    ] : [
       '/assets/js/tinymce/skins/content/default/content.min.css',
       'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap',
       'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css',
@@ -213,12 +222,13 @@ export function getTinyMCEConfig() {
         document.dispatchEvent(new CustomEvent('tinymce:contentChanged'));
       });
       
-      // Apply dark mode theme and inject Prism Okaidia CSS after
-      // TinyMCE's codesample plugin injects its bundled (light) Prism CSS
+      // Apply the page theme and, for the dark theme, inject Prism Okaidia CSS after
+      // TinyMCE's codesample plugin injects its bundled (light) Prism CSS.
+      // The light theme keeps the bundled light Prism CSS and adds its own muted token colours.
       editor.on('init', function() {
         applyTinyMCETheme(editor);
         var doc = editor.getDoc();
-        if (doc && doc.head) {
+        if (!soft && doc && doc.head) {
           var link = doc.createElement('link');
           link.rel = 'stylesheet';
           link.href = 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css';

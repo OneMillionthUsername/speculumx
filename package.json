@@ -25,6 +25,7 @@
     "postinstall": "npm run copy:dompurify && npm run copy:tinymce",
     "copy:dompurify": "node scripts/copy-dompurify.mjs",
     "copy:tinymce": "node scripts/copy-tinymce.mjs",
+    "import:backdrops": "node scripts/import-backdrop-photos.mjs",
     "sanitize-db": "node scripts/sanitize-db-posts.js",
     "sanitize-db:dry": "node scripts/sanitize-db-posts.js --dry-run",
     "sanitize-db:prod": "node scripts/run-sanitize-prod.mjs",

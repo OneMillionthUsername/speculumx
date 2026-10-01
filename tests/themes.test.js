@@ -11,6 +11,11 @@ describe('resolveTheme', () => {
     expect(theme.warnings).toEqual([]);
   });
 
+  it('has no photo credit for a backdrop without a photo', () => {
+    expect(resolveTheme('soft', 'herbst').photoCredit).toBeNull();
+    expect(resolveTheme('radical', '').photoCredit).toBeNull();
+  });
+
   it('keeps the original theme selectable and without a backdrop', () => {
     const theme = resolveTheme('radical', 'winter');
     expect(theme.id).toBe('radical');

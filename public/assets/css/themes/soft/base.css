@@ -46,6 +46,29 @@ img, svg, video { max-width: 100%; height: auto; }
 /* Thin, quiet scrollbars */
 * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 
+/* ── Photo backdrop (optional) ──
+   A backdrop may add a photograph (backdrops.css: --bd-photo-lg, optional --bd-photo-sm for narrow
+   screens, --bd-photo-y for the vertical focus, --bd-veil for a light wash over it). It sits on the
+   <html> element, below everything; the colour fields below then tint it softly. Without a photo
+   this layer is empty and the page shows the colour fields alone. */
+html {
+    --bd-photo-active: var(--bd-photo-lg, none);
+}
+@media (max-width: 900px) {
+    html { --bd-photo-active: var(--bd-photo-sm, var(--bd-photo-lg, none)); }
+}
+html::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--bd-veil, none), var(--bd-photo-active);
+    background-size: cover;
+    background-position: center var(--bd-photo-y, 40%);
+    background-repeat: no-repeat;
+}
+
 /* ── Flowing colour backdrop ──
    --bd-glow-* (backdrops.css) become large, blurred colour fields that
    bleed into each other (pale on a warm base = a sunlit sky). The layer is
@@ -64,6 +87,7 @@ body::before {
         radial-gradient(46vmax 40vmax at 8% 86%, color-mix(in srgb, var(--bd-glow-4) calc(var(--bd-glow-strength) * 100%), transparent), transparent 70%),
         radial-gradient(40vmax 34vmax at 48% 52%, color-mix(in srgb, var(--bd-glow-5) calc(var(--bd-glow-strength) * 70%), transparent), transparent 72%);
     filter: blur(32px);
+    opacity: var(--bd-glow-opacity, 1); /* lower when a photo is the main backdrop */
     animation: bd-drift 90s ease-in-out infinite alternate;
     will-change: transform;
 }
@@ -90,6 +114,25 @@ body::after {
     html { scroll-behavior: auto; }
     *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+/* ── Text that sits directly on the backdrop ──
+   Most content lives on translucent surfaces. A few lines (filter label, headings, empty states,
+   year headings) sit straight on the backdrop; a soft halo in the base colour keeps them legible
+   on top of a photograph without drawing a box around them. */
+:root { --halo: 0 0 14px color-mix(in srgb, var(--bd-base) 92%, transparent), 0 0 4px color-mix(in srgb, var(--bd-base) 85%, transparent); }
+
+.posts-header label,
+.search-title,
+.search-summary,
+.archive-year-heading,
+.no-posts-card,
+.content-area > h1,
+.content-area > h2,
+.content-area > p,
+.content-area > section > h2,
+.stats-meta,
+.featured-title,
+.tags-label { text-shadow: var(--halo); }
 
 /* ── Typography ── */
 h1, h2, h3, h4, h5, h6 {

@@ -1,0 +1,4 @@
+{
+  "_comment": "Photos for the soft theme's backdrops, imported with `npm run import:backdrops`. Only list photos whose licence allows free use on a website; keep author/licence/page accurate (shown in the footer). `source` is a direct image URL or a path relative to the repository. `focusY` is the vertical focus of the crop (CSS background-position).",
+  "photos": []
+}

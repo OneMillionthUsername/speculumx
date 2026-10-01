@@ -125,10 +125,19 @@
 .preview-placeholder { padding: 3.5rem 1rem; text-align: center; color: var(--text-faint); font-style: italic; }
 .response-message { margin-top: 1rem; }
 
-/* TinyMCE chrome (the skin ships its own colours; keep it in the same shape language) */
-.tox.tox-tinymce { border: 1px solid var(--line-strong) !important; border-radius: var(--r-lg) !important; overflow: hidden; }
-.tox .tox-toolbar, .tox .tox-toolbar__overflow, .tox .tox-toolbar__primary { background: var(--surface-solid) !important; }
-.tox .tox-edit-area__iframe { background: var(--surface-sunken) !important; }
+/* TinyMCE chrome: the light "oxide" skin, tinted to the active backdrop and given the same soft shape */
+.tox.tox-tinymce { border: 1px solid var(--line-strong) !important; border-radius: var(--r-lg) !important; overflow: hidden; box-shadow: var(--shadow-1); }
+.tox .tox-editor-header, .tox .tox-menubar, .tox .tox-toolbar, .tox .tox-toolbar__overflow, .tox .tox-toolbar__primary, .tox .tox-statusbar { background: var(--surface-solid) !important; }
+.tox .tox-editor-header { border-bottom: 1px solid var(--line) !important; box-shadow: none !important; }
+.tox .tox-toolbar__group { border-color: var(--line) !important; }
+.tox .tox-menubar .tox-mbtn, .tox .tox-tbtn { border-radius: var(--r-sm) !important; color: var(--text) !important; }
+.tox .tox-mbtn:hover:not(:disabled), .tox .tox-tbtn:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 14%, transparent) !important; }
+.tox .tox-tbtn--enabled, .tox .tox-tbtn--enabled:hover { background: color-mix(in srgb, var(--accent) 22%, transparent) !important; }
+.tox .tox-tbtn svg, .tox .tox-mbtn__select-label { fill: currentColor !important; }
+.tox .tox-statusbar { border-top: 1px solid var(--line) !important; color: var(--text-dim) !important; }
+.tox .tox-statusbar a, .tox .tox-statusbar__path-item, .tox .tox-statusbar__wordcount { color: var(--text-dim) !important; }
+.tox .tox-edit-area, .tox .tox-edit-area__iframe { background: var(--surface-solid) !important; }
+.tox .tox-collection--list .tox-collection__item--active, .tox .tox-collection--toolbar .tox-collection__item--active { background: color-mix(in srgb, var(--accent) 16%, transparent) !important; }
 #create-content input, #create-content textarea, #create-content .tox * { transition: none !important; }
 
 /* ── Statistics dashboard ── */
