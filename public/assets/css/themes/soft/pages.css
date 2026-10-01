@@ -75,8 +75,8 @@
     color: transparent;
     text-wrap: balance;
 }
-.ornament { width: clamp(30px, 4vw, 44px); opacity: 0.6; filter: sepia(0.7) saturate(0.9); }
-@media (max-width: 576px) { .ornament { display: none; } } /* they would wrap away from the title */
+/* The ornaments flanking the title belong to the original theme; the soft look does without them */
+.ornament { display: none; }
 
 .hero-diff-band { display: flex; justify-content: center; margin-top: clamp(1.5rem, 3vw, 2.3rem); }
 .sub-title {
