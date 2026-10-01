@@ -1,5 +1,5 @@
 import logger from '../utils/logger.js';
-import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl, stripHtmlToText } from '../public/assets/js/shared/text.js';
+import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl, stripHtmlToText, detectLanguage } from '../public/assets/js/shared/text.js';
 import { normalizeQuery, getSearchTerms, buildSnippet, splitHighlight } from '../public/assets/js/shared/search.js';
 import categoryController from './categoryController.js';
 import postController, { getCurrentPostsPaginated, searchPostsPaginated, PAGE_SIZE } from './postController.js';
@@ -57,6 +57,7 @@ async function showHomePage(req, res) {
       title: decodeHtmlEntities(p.title || ''),
       slug: p.slug,
       excerpt: createExcerpt(p.excerpt_source, 150),
+      lang: detectLanguage(p.excerpt_source),
       previewImage: resolvePreviewImage(p.preview_source || p.excerpt_source),
     }));
 
@@ -66,6 +67,7 @@ async function showHomePage(req, res) {
       title: decodeHtmlEntities(newest.title || ''),
       slug: newest.slug,
       excerpt: excerptAtWordEnd(newest.excerpt_source, 280),
+      lang: featuredPosts[0].lang,
       created_at: newest.created_at,
       previewImage: featuredPosts[0].previewImage,
     } : null;

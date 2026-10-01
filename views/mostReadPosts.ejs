@@ -18,9 +18,9 @@
                             <article class="most-read-item">
                                 <span class="rank">#<%= idx + 1 %></span>
                                 <div class="most-read-content">
-                                    <<%= __itemHeading %>><a class="post-link-style" href="/blogpost/<%= post.slug || ('id/' + post.id) %>"><%= post.title %></a></<%= __itemHeading %>>
+                                    <<%= __itemHeading %><% if (post.lang && post.lang !== 'de') { %> lang="<%= post.lang %>"<% } %>><a class="post-link-style" href="/blogpost/<%= post.slug || ('id/' + post.id) %>"><%= post.title %></a></<%= __itemHeading %>>
                                     <p><%= (post.views || 0) %> views | <%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
-                                    <p class="post-excerpt"><%= post.excerpt %></p>
+                                    <p class="post-excerpt"<% if (post.lang && post.lang !== 'de') { %> lang="<%= post.lang %>"<% } %>><%= post.excerpt %></p>
                                 </div>
                             </article>
                         <% }); %>

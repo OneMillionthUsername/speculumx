@@ -50,9 +50,38 @@ export function createExcerpt(htmlContent = '', maxLen = 150) {
   return excerpt.endsWith('...') ? excerpt : `${excerpt}...`;
 }
 
-// Pre-compute plain-text excerpts on a posts array before passing to templates.
+// Frequent function words that only occur in one of the two languages (words like "in", "so",
+// "was", "an", "will", "man" or "also" exist in both and are left out on purpose).
+const GERMAN_WORDS = new Set(['der', 'die', 'das', 'und', 'ist', 'nicht', 'ein', 'eine', 'einen', 'einem', 'einer',
+  'zu', 'den', 'dem', 'des', 'von', 'mit', 'sich', 'auf', 'für', 'im', 'auch', 'als', 'es', 'wie', 'bei', 'aus',
+  'nach', 'oder', 'wird', 'werden', 'sind', 'wir', 'ich', 'sie', 'er', 'noch', 'nur', 'über', 'durch', 'dass',
+  'aber', 'wenn', 'hat', 'haben', 'kann', 'diese', 'dieser', 'doch', 'schon', 'sehr', 'zum', 'zur', 'vom']);
+const ENGLISH_WORDS = new Set(['the', 'and', 'of', 'to', 'is', 'it', 'that', 'for', 'with', 'on', 'are', 'be', 'this',
+  'by', 'not', 'or', 'have', 'from', 'at', 'which', 'but', 'they', 'you', 'we', 'has', 'can', 'their', 'there',
+  'would', 'been', 'what', 'about', 'its', 'were', 'these', 'those', 'into', 'than', 'then', 'when', 'just', 'your']);
+
+/**
+ * Language of a post or teaser text: 'en' when English function words clearly outnumber German ones,
+ * otherwise 'de' (the language of the site). The browser needs the right language to hyphenate a text
+ * (CSS `hyphens: auto` uses the patterns of the element's `lang`).
+ * @param {string} htmlOrText
+ * @returns {'de'|'en'}
+ */
+export function detectLanguage(htmlOrText = '') {
+  // The opening of a post decides; stripHtmlToText copes with a tag cut off at the end
+  const words = stripHtmlToText(String(htmlOrText).slice(0, 20000)).toLowerCase().match(/[a-zäöüß]+/g) || [];
+  let de = 0;
+  let en = 0;
+  for (const word of words.slice(0, 600)) {
+    if (GERMAN_WORDS.has(word)) de++;
+    else if (ENGLISH_WORDS.has(word)) en++;
+  }
+  return en >= 5 && en > de * 2 ? 'en' : 'de';
+}
+
+// Pre-compute plain-text excerpts (and the language, for hyphenation) on a posts array before passing to templates.
 export const withExcerpts = (posts) => Array.isArray(posts)
-  ? posts.map(p => ({ ...p, excerpt: createExcerpt(p.content) }))
+  ? posts.map(p => ({ ...p, excerpt: createExcerpt(p.content), lang: detectLanguage(p.content) }))
   : posts;
 
 // Clean pasted HTML content: strip inline styles, unwrap presentational wrappers,

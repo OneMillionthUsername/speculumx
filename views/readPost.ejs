@@ -6,13 +6,16 @@
     if (typeof post !== 'undefined' && post && post.slug) {
         extraHead += `<link rel="canonical" href="https://speculumx.at/blogpost/${encodeURIComponent(post.slug)}">`;
     }
+    // Reading layout chosen in the editor (models/postModel.js POST_LAYOUTS); the wide ones use the full page width
+    const __layout = (typeof post !== 'undefined' && post && ['wide', 'magazine'].includes(post.layout)) ? post.layout : 'standard';
+    const __lang = (typeof contentLang !== 'undefined' && contentLang) ? contentLang : 'de';
 %>
 
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-10">
+        <div class="<%= __layout === 'standard' ? 'col-md-10' : 'col-12' %>">
             <div class="content-area">
-                <div id="blogpost-content">
+                <div id="blogpost-content" class="post-layout-<%= __layout %>">
                     <% if (!post) { %>
                     <div id="loading" class="loading-spinner">
                         <div class="spinner"></div>
@@ -25,7 +28,7 @@
                     <% } else { %>
                     <article id="post-article" class="<%= post ? '' : 'hidden' %>" <% if (typeof post !== 'undefined' && post && post.id) { %> data-post-id="<%= post.id %>" <% } %>>
                         <header class="post-header">
-                            <h1 id="title" class="post-title"><%= post ? post.title : '' %></h1>
+                            <h1 id="title" class="post-title"<% if (__lang !== 'de') { %> lang="<%= __lang %>"<% } %>><%= post ? post.title : '' %></h1>
                             <div id="meta" class="post-meta-info">
                                 <% if (post) { %>
                                     <div class="post-date">Erstellt am <%= new Date(post.created_at).toLocaleDateString('de-DE') %> um <%= new Date(post.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) %></div>
@@ -36,7 +39,7 @@
                                 <% } %>
                             </div>
                         </header>
-                        <div id="content" class="post-content"><% if (post && post.content) { %><%- post.content %><% } %></div>
+                        <div id="content" class="post-content"<% if (__lang !== 'de') { %> lang="<%= __lang %>"<% } %>><% if (post && post.content) { %><%- post.content %><% } %></div>
                         <footer class="post-footer">
                             <div id="tags" class="post-tags-container">
                                 <% if (post && Array.isArray(post.tags) && post.tags.length > 0) { %>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 32">
+<!-- Ornament divider "Blätter": tapering lines, two leaves and a diamond. Used as a CSS mask (content.css). -->
+<path d="M4 16 L80 14.8 L80 17.2 Z"/>
+<path d="M236 16 L160 14.8 L160 17.2 Z"/>
+<path fill-rule="evenodd" d="M82 16 Q96 4 111 16 Q96 28 82 16 Z M86 16 L107 15.4 L107 16.6 Z"/>
+<path fill-rule="evenodd" d="M158 16 Q144 4 129 16 Q144 28 158 16 Z M154 16 L133 15.4 L133 16.6 Z"/>
+<path d="M120 9 L126 16 L120 23 L114 16 Z"/>
+</svg>

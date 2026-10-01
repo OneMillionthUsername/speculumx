@@ -4,6 +4,7 @@
 import { getAssetVersion } from '../../config.js';
 import { uploadImageMultipart } from './upload.js';
 import { setupCustomButtons } from './buttons.js';
+import { setupDesign, getDesignFormats, getDesignStyleFormats } from './design.js';
 import { applyTinyMCETheme, isSoftTheme } from './theme.js';
 
 // Fraunces/DM Mono for the soft theme's editor content (the iframe does not share the page's fonts)
@@ -40,11 +41,13 @@ export function getTinyMCEConfig() {
       '/assets/js/tinymce/skins/content/default/content.min.css',
       SOFT_FONTS_URL,
       '/assets/css/themes/soft/tinymce-content.css',
+      '/assets/css/themes/soft/content.css',
     ] : [
       '/assets/js/tinymce/skins/content/default/content.min.css',
       'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap',
       'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css',
       '/assets/css/tinymce-content.css',
+      '/assets/css/content.css',
     ],
     
     // Language
@@ -60,7 +63,7 @@ export function getTinyMCEConfig() {
       'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
       'insertdatetime', 'media', 'table', 'help', 'wordcount',
       'save', 'directionality', 'emoticons',
-      'codesample', 'nonbreaking', 'pagebreak', 'quickbars',
+      'codesample', 'nonbreaking', 'pagebreak', 'quickbars', 'accordion',
     ],
 
     // Code sample languages (Prism autoloader fetches grammars on demand)
@@ -95,12 +98,14 @@ export function getTinyMCEConfig() {
     toolbar: [
       'undo redo | bold italic underline strikethrough | fontfamily fontsize forecolor backcolor',
       'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent',
-      'link image media table | codesample blockquote customblockquote hr pagebreak | emoticons charmap',
+      'pcdesign | link image media table | codesample blockquote customblockquote hr pagebreak | emoticons charmap',
       'searchreplace visualblocks code fullscreen preview | save help',
     ],
     toolbar_mode: 'floating',
     quickbars_selection_toolbar: 'bold italic underline | quicklink blockquote',
     quickbars_insert_toolbar: 'image media table hr',
+    // Clicking an image: float it left/right (text flows around it) or centre it, size S/M/L, wider than the column
+    quickbars_image_toolbar: 'alignleft aligncenter alignright | pcimgsmall pcimgmedium pcimglarge pcimgwide | image',
     contextmenu: 'link image table configurepermanentpen',
     
     // Formatting
@@ -120,7 +125,11 @@ export function getTinyMCEConfig() {
         {title: 'Italic', inline: 'em'},
         {title: 'Code', inline: 'code'},
       ]},
+      ...getDesignStyleFormats(),
     ],
+
+    // Alignment and the "Gestaltung" styles as classes (design.js): style attributes do not survive saving
+    formats: getDesignFormats(),
     
     // Image upload
     images_upload_handler: async (blobInfo, progress) => {
@@ -154,9 +163,9 @@ export function getTinyMCEConfig() {
     automatic_uploads: true,
     images_file_types: 'jpg,jpeg,png,gif,webp',
     image_dimensions: false,
-    image_class_list: [
-      { title: 'Responsive', value: 'img-responsive' }
-    ],
+    // Captions: the image dialog offers "Bildunterschrift", which wraps the image in <figure class="image">.
+    // No image_class_list: the dialog would overwrite the layout classes (align-left, pc-size-s, …) on saving.
+    image_caption: true,
     
     // Spellcheck
     browser_spellcheck: true,
@@ -184,6 +193,7 @@ export function getTinyMCEConfig() {
     setup: function(editor) {
       // Register custom buttons
       setupCustomButtons(editor);
+      setupDesign(editor);
       
       // Make images responsive
       const makeImagesResponsive = () => {
@@ -228,6 +238,8 @@ export function getTinyMCEConfig() {
       editor.on('init', function() {
         applyTinyMCETheme(editor);
         var doc = editor.getDoc();
+        // The browser only hyphenates (justified paragraphs) when it knows the language
+        if (doc && doc.documentElement && !doc.documentElement.lang) doc.documentElement.lang = 'de';
         if (!soft && doc && doc.head) {
           var link = doc.createElement('link');
           link.rel = 'stylesheet';

@@ -34,7 +34,8 @@ describe('resolveTheme', () => {
     const theme = resolveTheme('radical', 'winter');
     expect(theme.id).toBe('radical');
     expect(theme.backdrop).toBeNull();
-    expect(theme.stylesheets).toEqual(['/assets/css/main.css']);
+    // main.css unchanged; content.css only adds the editor's design elements (boxes, side images, ornaments)
+    expect(theme.stylesheets).toEqual(['/assets/css/main.css', '/assets/css/content.css']);
     expect(theme.navbar).toBe('partials/navbar');
     expect(theme.warnings).toEqual([]);
   });

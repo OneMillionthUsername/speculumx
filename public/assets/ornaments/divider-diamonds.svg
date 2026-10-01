@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 24">
+<!-- Ornament divider "Rauten": hairlines and three diamonds. Used as a CSS mask (content.css). -->
+<path d="M8 11.4 H92 V12.6 H8 Z M148 11.4 H232 V12.6 H148 Z"/>
+<path d="M120 2 L130 12 L120 22 L110 12 Z"/>
+<path fill-rule="evenodd" d="M101 6 L107 12 L101 18 L95 12 Z M101 8.6 L97.6 12 L101 15.4 L104.4 12 Z"/>
+<path fill-rule="evenodd" d="M139 6 L145 12 L139 18 L133 12 Z M139 8.6 L135.6 12 L139 15.4 L142.4 12 Z"/>
+</svg>

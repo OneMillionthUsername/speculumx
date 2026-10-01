@@ -1,0 +1,397 @@
+/* ============================================================
+   SOFT THEME — post content: hyphenation, layouts, design elements
+   One file for the reading view (.post-content), the editor preview
+   (.preview-box) and the editor itself (.mce-content-body: this file is
+   part of TinyMCE's content_css, see tinymce/modules/config.js).
+
+   The classes come from the editor: the "Gestaltung" menu, the image
+   toolbar and the alignment buttons (tinymce/modules/design.js). The
+   server keeps classes but removes style attributes, so every look
+   here hangs on a class. Inside the editor iframe only the palette is
+   available (tinymce/modules/theme.js copies it), so radii, shadows and
+   timings carry fallbacks.
+
+   Reading view only: the article is a size container named "post"
+   (pages.css), so elements can reach beyond the text column (cqi) and
+   floats can be dropped where the column gets too narrow for them.
+   ============================================================ */
+
+:is(.post-content, .preview-box, .mce-content-body) {
+    --pc-radius: var(--r-lg, 22px);
+    --pc-gap: 1.6rem;          /* between a floated element and the text that flows around it */
+    --pc-float: 42%;           /* width of a floated image */
+    --pc-ornament-color: color-mix(in srgb, var(--accent) 72%, transparent);
+}
+
+.preview-box { container: post / inline-size; }
+
+/* ── Hyphenation and line breaking ──
+   The browser hyphenates in the language of the element (<html lang="de">; English posts carry lang="en").
+   Only words of six or more letters are split, keeping at least three letters on each side. Headings are
+   hyphenated on narrow screens only. The editor stays without automatic hyphenation, except in justified
+   paragraphs, which need it to look right. */
+:is(.post-content, .preview-box) {
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    hyphenate-limit-chars: 6 3 3;
+    text-wrap: pretty;
+}
+:is(.post-content, .preview-box) :is(h1, h2, h3, h4, h5, h6) { -webkit-hyphens: manual; hyphens: manual; text-wrap: balance; }
+@media (max-width: 600px) {
+    :is(.post-content, .preview-box) :is(h1, h2, h3, h4) { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 10 4 4; }
+}
+:is(.post-content, .preview-box, .mce-content-body) :is(pre, code, kbd, samp) { -webkit-hyphens: none; hyphens: none; }
+
+/* ── Text alignment: the editor's alignment buttons write these classes ── */
+:is(.post-content, .preview-box, .mce-content-body) .text-left { text-align: left; }
+:is(.post-content, .preview-box, .mce-content-body) .text-center { text-align: center; }
+:is(.post-content, .preview-box, .mce-content-body) .text-right { text-align: right; }
+:is(.post-content, .preview-box, .mce-content-body) .text-justify {
+    text-align: justify;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    hyphenate-limit-chars: 6 3 3;
+}
+
+/* ── Images ──
+   align-left / align-right: the image floats beside the text, which flows around it (42 % of the column;
+   pc-size-s 30 %, pc-size-l 56 %). align-center or no class: a centred block (pc-size-s half the column,
+   pc-size-l the full column). pc-wide: wider than the text column (below).
+   With a caption the image becomes <figure class="image"><img><figcaption>, and the classes sit on the figure. */
+:is(.post-content, .preview-box, .mce-content-body) figure { margin: 1.8rem 0; }
+:is(.post-content, .preview-box, .mce-content-body) figure.image {
+    display: block;            /* TinyMCE's own content CSS makes it an inline-block with a grey frame */
+    width: fit-content;
+    max-width: 100%;
+    margin: 1.8rem auto;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+:is(.post-content, .preview-box, .mce-content-body) figure.image img { margin: 0; }
+:is(.post-content, .preview-box, .mce-content-body) figcaption {
+    contain: inline-size;      /* wraps at the width of the image instead of widening the figure */
+    margin: 0.65rem 0 0;
+    padding: 0;
+    color: var(--text-dim);
+    font-family: var(--font-ui);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    text-align: center;
+    -webkit-hyphens: manual;
+    hyphens: manual;
+}
+
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure):is(.align-left, .align-right) {
+    width: var(--pc-float);
+    max-width: var(--pc-float);
+}
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).align-left { float: left; clear: left; margin: 0.35rem var(--pc-gap) 1rem 0; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).align-right { float: right; clear: right; margin: 0.35rem 0 1rem var(--pc-gap); }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).pc-size-s { --pc-float: 30%; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).pc-size-l { --pc-float: 56%; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).align-center { float: none; margin-inline: auto; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure):not(.align-left, .align-right).pc-size-s { width: 50%; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure):not(.align-left, .align-right).pc-size-l { width: 100%; }
+:is(.post-content, .preview-box, .mce-content-body) figure:is(.align-left, .align-right, .pc-size-s, .pc-size-l, .pc-wide) img { width: 100%; }
+
+/* pc-wide: an image, table or box that reaches beyond the text column, across the whole article.
+   The editor and the preview have no wider frame, there it takes the full width. */
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure, table, section, aside, blockquote).pc-wide {
+    clear: both;
+    float: none;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+}
+@supports (width: 1cqi) {
+    /* Images inserted in the editor usually sit in a paragraph, which is as wide as the column */
+    #post-article .post-content > :is(img, figure, table, section, aside, blockquote).pc-wide,
+    #post-article .post-content > p > img.pc-wide {
+        width: 100cqi;
+        max-width: none;
+        margin-inline: calc((100% - 100cqi) / 2);
+    }
+}
+
+/* ── Paragraph styles ── */
+
+/* Einleitung: a larger, quieter opening paragraph */
+:is(.post-content, .preview-box, .mce-content-body) p.pc-lead {
+    margin-bottom: 1.5em;
+    color: var(--text-dim);
+    font-size: 1.2em;
+    font-style: italic;
+    line-height: 1.62;
+}
+
+/* Initiale: the first letter spans about three lines (the magazine layout gives the first paragraph one) */
+:is(.post-content, .preview-box, .mce-content-body) p.pc-dropcap::first-letter,
+.post-layout-magazine :is(.post-content, .preview-box) > p:first-of-type::first-letter {
+    float: left;
+    margin: 0.07em 0.12em 0 0;
+    padding: 0;
+    color: var(--accent);
+    font-size: 3.55em;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 0.8;
+    font-variation-settings: 'SOFT' 100, 'WONK' 1;
+}
+
+/* Kapitälchen-Auftakt: the first line in small capitals, as in a book */
+:is(.post-content, .preview-box, .mce-content-body) p.pc-smallcaps::first-line,
+.post-layout-magazine :is(.post-content, .preview-box) > p:first-of-type::first-line {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.05em;
+}
+
+/* Schlusszeichen: a small diamond after the last word (the magazine layout ends every post with one) */
+:is(.post-content, .preview-box, .mce-content-body) p.pc-end::after,
+.post-layout-magazine .post-content > p:last-child::after {
+    content: '';
+    display: inline-block;
+    width: 0.42em;
+    height: 0.42em;
+    margin-left: 0.6em;
+    background: var(--accent);
+    vertical-align: 0.06em;
+    transform: rotate(45deg);
+}
+
+/* Textmarker: a highlighter stroke over the lower half of the line */
+:is(.post-content, .preview-box, .mce-content-body) mark {
+    padding: 0 0.12em;
+    border-radius: 0.2em;
+    background: linear-gradient(180deg, transparent 44%, color-mix(in srgb, var(--tone-2) 30%, transparent) 44%, color-mix(in srgb, var(--tone-2) 30%, transparent) 92%, transparent 92%);
+    color: inherit;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* ── Boxes ──
+   Centred and full-width blocks start below a floated image instead of running underneath it;
+   boxes with a frame (Hinweis, Exkurs) narrow beside it. */
+:is(.post-content, .preview-box, .mce-content-body) :is(aside.pc-key, section.pc-columns, blockquote.pc-pullquote:not(.align-left, .align-right), hr.pc-divider) { clear: both; }
+:is(.post-content, .preview-box, .mce-content-body) :is(aside.pc-note, details) { display: flow-root; }
+:is(.post-content, .preview-box, .mce-content-body) :is(aside, section):is(.pc-note, .pc-key, .pc-margin, .pc-columns) > :last-child { margin-bottom: 0; }
+:is(.post-content, .preview-box, .mce-content-body) :is(aside, section):is(.pc-note, .pc-key, .pc-margin, .pc-columns) > :first-child { margin-top: 0; }
+
+/* Hinweis: a tinted box with a small label */
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-note {
+    margin: 1.8rem 0;
+    padding: 1.05rem 1.4rem 1.2rem;
+    border: 1px solid color-mix(in srgb, var(--tone-3) 26%, transparent);
+    border-radius: var(--pc-radius);
+    background: color-mix(in srgb, var(--tone-3) 9%, var(--surface-sunken));
+}
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-note::before {
+    content: 'Hinweis';
+    display: block;
+    margin-bottom: 0.35rem;
+    color: var(--tone-3);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-style: normal;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-note:lang(en)::before { content: 'Note'; }
+
+/* Kernsatz: a centred statement between two hairlines, a diamond on the upper one */
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-key {
+    position: relative;
+    max-width: 34rem;
+    margin: 2.6rem auto;
+    padding: 1.5rem 0.5rem 1.4rem;
+    border-block: 1px solid var(--line-strong);
+    color: var(--text);
+    font-size: 1.22em;
+    font-style: italic;
+    line-height: 1.5;
+    text-align: center;
+    text-wrap: balance;
+}
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-key::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0.7rem;
+    height: 0.7rem;
+    background: var(--accent);
+    box-shadow: 0 0 0 0.4rem var(--surface-solid);
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* Randnotiz: a small note beside the text (the magazine layout moves it into the margin) */
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-margin {
+    float: right;
+    clear: right;
+    width: 36%;
+    max-width: 15rem;
+    margin: 0.3rem 0 1rem var(--pc-gap);
+    padding: 0.15rem 0 0.15rem 1rem;
+    border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    color: var(--text-dim);
+    font-size: 0.84em;
+    line-height: 1.55;
+}
+
+/* Zwei Spalten: newspaper columns where the column is wide enough (always in the editor) */
+:is(.post-content, .preview-box, .mce-content-body) section.pc-columns {
+    margin: 1.8rem 0;
+    column-gap: 2.4rem;
+    column-rule: 1px solid var(--line);
+}
+:is(.post-content, .preview-box, .mce-content-body) section.pc-columns > :is(h2, h3, h4, figure, img, blockquote, aside, ul, ol, table) { break-inside: avoid; }
+.mce-content-body section.pc-columns { column-count: 2; }
+@container post (width > 34rem) {
+    :is(.post-content, .preview-box) section.pc-columns { column-count: 2; }
+}
+
+/* ── Quotes ── */
+
+/* Herausgestelltes Zitat: large, centred, with an ornamental quotation mark; align-left/-right float it */
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote {
+    max-width: 32rem;
+    margin: 2.4rem auto;
+    padding: 0.4rem 0.5rem 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--accent-strong);
+    font-size: 1.36em;
+    font-style: italic;
+    line-height: 1.42;
+    text-align: center;
+    text-wrap: balance;
+}
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote::before {
+    content: '\00BB';
+    display: block;
+    height: 0.55em;
+    color: color-mix(in srgb, var(--accent) 50%, transparent);
+    font-size: 2.6em;
+    font-style: normal;
+    line-height: 0.6;
+}
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote:lang(en)::before { content: '\201C'; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote :is(footer, cite) { font-size: 0.875rem; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote:is(.align-left, .align-right) {
+    width: 40%;
+    max-width: 17rem;
+    margin-block: 0.4rem 1rem;
+    padding: 0.9rem 0 0.8rem;
+    border-block: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    font-size: 1.16em;
+    text-align: left;
+}
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote.align-right { float: right; clear: right; margin-inline: var(--pc-gap) 0; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote.align-left { float: left; clear: left; margin-inline: 0 var(--pc-gap); }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote:is(.align-left, .align-right)::before { font-size: 2em; height: 0.5em; }
+
+/* Motto: a short quotation with its source, set to the right at the start of a text or chapter */
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-epigraph {
+    width: fit-content;
+    max-width: min(24rem, 80%);
+    margin: 0 0 2.4rem auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--text-dim);
+    font-size: 0.98em;
+    font-style: italic;
+    line-height: 1.6;
+    text-align: right;
+}
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-epigraph p { margin-bottom: 0.3em; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-epigraph :is(footer, cite) {
+    display: block;
+    color: var(--text-faint);
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    font-style: normal;
+    letter-spacing: 0.08em;
+}
+
+/* ── Exkurs: <details>/<summary>, opens on click (posts always start closed) ── */
+:is(.post-content, .preview-box, .mce-content-body) details {
+    margin: 1.8rem 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--pc-radius);
+    background: color-mix(in srgb, var(--tone-4) 7%, var(--surface-sunken));
+}
+:is(.post-content, .preview-box, .mce-content-body) details > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.3rem;
+    border-radius: inherit;
+    color: var(--text);
+    font-weight: 500;
+    line-height: 1.4;
+    list-style: none;
+    cursor: pointer;
+}
+:is(.post-content, .preview-box, .mce-content-body) details > summary::-webkit-details-marker { display: none; }
+:is(.post-content, .preview-box, .mce-content-body) details > summary::before {
+    content: '';
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid var(--tone-4);
+    border-bottom: 2px solid var(--tone-4);
+    transform: rotate(-45deg);
+    transition: transform var(--t-fast, 160ms) ease;
+}
+:is(.post-content, .preview-box, .mce-content-body) details[open] > summary::before { transform: rotate(45deg); }
+:is(.post-content, .preview-box) details > summary:hover { color: var(--accent-strong); }
+:is(.post-content, .preview-box, .mce-content-body) details > :not(summary) { margin-inline: 1.3rem; }
+:is(.post-content, .preview-box, .mce-content-body) details[open] { padding-bottom: 1rem; }
+:is(.post-content, .preview-box, .mce-content-body) details > :not(summary):last-child { margin-bottom: 0; }
+
+/* ── Ornament dividers: <hr class="pc-divider pc-divider--…">, drawn as a mask in the accent colour ── */
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider {
+    height: 1.4rem;
+    max-width: 15rem;
+    margin: 2.6rem auto;
+    border: 0;
+    background: var(--pc-ornament-color);
+    -webkit-mask: var(--pc-ornament) center / contain no-repeat;
+    mask: var(--pc-ornament) center / contain no-repeat;
+}
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider--flourish { --pc-ornament: url('/assets/ornaments/flourish-pair.svg'); height: 1.9rem; max-width: 16rem; }
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider--leaves { --pc-ornament: url('/assets/ornaments/divider-leaves.svg'); height: 1.2rem; max-width: 18rem; }
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider--stars { --pc-ornament: url('/assets/ornaments/divider-stars.svg'); height: 1.6rem; max-width: 2rem; }
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider--diamonds { --pc-ornament: url('/assets/ornaments/divider-diamonds.svg'); height: 1rem; max-width: 18rem; }
+
+/* ── Narrow columns (phones): nothing floats, everything is a full-width block ── */
+@container post (width <= 30rem) {
+    :is(.post-content, .preview-box) :is(img, figure, blockquote.pc-pullquote, aside.pc-margin):is(.align-left, .align-right, .pc-margin) {
+        float: none;
+        width: auto;
+        max-width: 100%;
+        margin: 1.6rem auto;
+    }
+    :is(.post-content, .preview-box) figure:is(.align-left, .align-right) { width: fit-content; }
+    :is(.post-content, .preview-box) blockquote.pc-pullquote:is(.align-left, .align-right) { max-width: 32rem; }
+    :is(.post-content, .preview-box) aside.pc-margin { margin: 1.4rem 0; }
+}
+
+/* ── Magazine layout: floated images, quotes and notes reach into the page margin ── */
+@container post (width > 30rem) {
+    .post-layout-magazine .post-content > :is(img, figure, blockquote.pc-pullquote).align-left,
+    .post-layout-magazine .post-content > p > img.align-left {
+        margin-left: calc(-1 * clamp(0px, (100cqi - 100%) / 2 - 1rem, 8rem));
+    }
+    .post-layout-magazine .post-content > :is(img, figure, blockquote.pc-pullquote).align-right,
+    .post-layout-magazine .post-content > p > img.align-right {
+        margin-right: calc(-1 * clamp(0px, (100cqi - 100%) / 2 - 1rem, 8rem));
+    }
+    .post-layout-magazine .post-content > aside.pc-margin {
+        margin-right: calc(-1 * clamp(0px, (100cqi - 100%) / 2 - 1rem, 11rem));
+    }
+}

@@ -73,6 +73,16 @@
                                     </select>
                                 </div>
                                 <div class="toolbar-group">
+                                    <%# Values: models/postModel.js POST_LAYOUTS %>
+                                    <% const __layout = (typeof post !== 'undefined' && post && post.layout) ? post.layout : 'standard'; %>
+                                    <span class="toolbar-label">Layout:</span>
+                                    <select name="layout" aria-label="Layout des Beitrags" title="Klassisch: ruhige Lesespalte · Breit: breitere Seite und Textspalte · Magazin: breite Seite, Bilder, Zitate und Randnotizen ragen in den Rand, mit Initiale und Schlusszeichen">
+                                        <option value="standard" <%= __layout === 'standard' ? 'selected' : '' %>>Klassisch</option>
+                                        <option value="wide" <%= __layout === 'wide' ? 'selected' : '' %>>Breit</option>
+                                        <option value="magazine" <%= __layout === 'magazine' ? 'selected' : '' %>>Magazin</option>
+                                    </select>
+                                </div>
+                                <div class="toolbar-group">
                                     <span class="toolbar-label">AI-Assistent:</span>
                                     <button type="button" id="ai-improve-btn" class="btn btn-sm btn-outline-primary ai-btn" data-action="improveText" title="Markierten Text oder ganzen Inhalt verbessern">
                                         ✨ Text verbessern

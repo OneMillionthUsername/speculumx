@@ -1,0 +1,198 @@
+/* ============================================================
+   RADICAL THEME — post content: hyphenation and design elements
+   The same classes as themes/soft/content.css (written by the editor's
+   "Gestaltung" menu, image toolbar and alignment buttons), in the dark,
+   gold look of the original theme. Loaded on the pages of this theme
+   and inside its TinyMCE editor. The editor iframe has none of
+   main.css's variables, hence the fallbacks. tinymce-content.css
+   forces image margins with !important; the floats below do the same.
+   ============================================================ */
+
+:is(.post-content, .preview-box, .mce-content-body) {
+    --pc-accent: var(--gold, #e8c547);
+    --pc-dim: var(--dim, rgba(230, 225, 216, 0.6));
+    --pc-line: var(--line-hi, rgba(255, 255, 255, 0.15));
+    --pc-box: var(--surf, #131311);
+    --pc-mono: var(--mono, 'IBM Plex Mono', monospace);
+    --pc-gap: 1.5rem;
+    --pc-float: 42%;
+}
+
+/* ── Hyphenation (in the language of the element; English posts carry lang="en") ── */
+:is(.post-content, .preview-box) { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 6 3 3; text-wrap: pretty; }
+:is(.post-content, .preview-box) :is(h1, h2, h3, h4, h5, h6) { -webkit-hyphens: manual; hyphens: manual; }
+:is(.post-content, .preview-box, .mce-content-body) :is(pre, code) { -webkit-hyphens: none; hyphens: none; }
+
+/* ── Text alignment classes (editor alignment buttons) ── */
+:is(.post-content, .preview-box, .mce-content-body) .text-left { text-align: left; }
+:is(.post-content, .preview-box, .mce-content-body) .text-center { text-align: center; }
+:is(.post-content, .preview-box, .mce-content-body) .text-right { text-align: right; }
+:is(.post-content, .preview-box, .mce-content-body) .text-justify { text-align: justify; -webkit-hyphens: auto; hyphens: auto; }
+
+/* ── Images: floats, sizes, captions, wide ── */
+:is(.post-content, .preview-box, .mce-content-body) figure.image { display: block; width: fit-content; max-width: 100%; margin: 1.6rem auto; padding: 0; border: 0; background: none; }
+:is(.post-content, .preview-box, .mce-content-body) figure.image img { margin: 0 !important; }
+:is(.post-content, .preview-box, .mce-content-body) figcaption {
+    contain: inline-size;
+    margin-top: 0.5rem;
+    color: var(--pc-dim);
+    font-family: var(--pc-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-align: center;
+}
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure):is(.align-left, .align-right) { width: var(--pc-float); max-width: var(--pc-float) !important; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).align-left { float: left; clear: left; margin: 0.4rem var(--pc-gap) 1rem 0 !important; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).align-right { float: right; clear: right; margin: 0.4rem 0 1rem var(--pc-gap) !important; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).align-center { float: none; margin-inline: auto; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).pc-size-s { --pc-float: 30%; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure).pc-size-l { --pc-float: 56%; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure):not(.align-left, .align-right).pc-size-s { width: 50%; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure):not(.align-left, .align-right).pc-size-l { width: 100%; }
+:is(.post-content, .preview-box, .mce-content-body) figure:is(.align-left, .align-right, .pc-size-s, .pc-size-l, .pc-wide) img { width: 100%; }
+:is(.post-content, .preview-box, .mce-content-body) :is(img, figure, table, section, aside, blockquote).pc-wide { clear: both; float: none; width: 100%; max-width: 100% !important; }
+
+/* ── Paragraph styles ── */
+:is(.post-content, .preview-box, .mce-content-body) p.pc-lead { color: var(--pc-dim); font-size: 1.3em; font-style: italic; line-height: 1.6; }
+:is(.post-content, .preview-box, .mce-content-body) p.pc-dropcap::first-letter,
+.post-layout-magazine .post-content > p:first-of-type::first-letter {
+    float: left;
+    margin: 0.06em 0.12em 0 0;
+    color: var(--pc-accent);
+    font-size: 3.6em;
+    font-weight: 600;
+    line-height: 0.8;
+}
+:is(.post-content, .preview-box, .mce-content-body) p.pc-smallcaps::first-line { font-variant-caps: small-caps; letter-spacing: 0.06em; }
+:is(.post-content, .preview-box, .mce-content-body) p.pc-end::after,
+.post-layout-magazine .post-content > p:last-child::after {
+    content: '';
+    display: inline-block;
+    width: 0.42em;
+    height: 0.42em;
+    margin-left: 0.6em;
+    background: var(--pc-accent);
+    transform: rotate(45deg);
+}
+:is(.post-content, .preview-box, .mce-content-body) mark { padding: 0 0.12em; background: rgba(232, 197, 71, 0.28); color: inherit; }
+
+/* ── Boxes (centred blocks start below a floated image, framed ones narrow beside it) ── */
+:is(.post-content, .preview-box, .mce-content-body) :is(aside.pc-key, section.pc-columns, blockquote.pc-pullquote:not(.align-left, .align-right), hr.pc-divider) { clear: both; }
+:is(.post-content, .preview-box, .mce-content-body) :is(aside.pc-note, details) { display: flow-root; }
+:is(.post-content, .preview-box, .mce-content-body) :is(aside, section):is(.pc-note, .pc-key, .pc-margin, .pc-columns) > :last-child { margin-bottom: 0; }
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-note { margin: 1.6rem 0; padding: 1rem 1.3rem; border: 1px solid var(--pc-line); background: var(--pc-box); }
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-note::before {
+    content: 'Hinweis';
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--pc-accent);
+    font-family: var(--pc-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-note:lang(en)::before { content: 'Note'; }
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-key {
+    max-width: 34rem;
+    margin: 2.4rem auto;
+    padding: 1.3rem 0.5rem;
+    border-block: 1px solid var(--pc-accent);
+    font-size: 1.3em;
+    font-style: italic;
+    text-align: center;
+}
+:is(.post-content, .preview-box, .mce-content-body) aside.pc-margin {
+    float: right;
+    clear: right;
+    width: 36%;
+    max-width: 15rem;
+    margin: 0.3rem 0 1rem var(--pc-gap);
+    padding-left: 1rem;
+    border-left: 2px solid var(--pc-accent);
+    color: var(--pc-dim);
+    font-size: 0.85em;
+    line-height: 1.55;
+}
+:is(.post-content, .preview-box, .mce-content-body) section.pc-columns { margin: 1.6rem 0; column-gap: 2.2rem; column-rule: 1px solid var(--pc-line); }
+@media (min-width: 768px) {
+    :is(.post-content, .preview-box, .mce-content-body) section.pc-columns { column-count: 2; }
+}
+
+/* ── Quotes (the decorative quotation marks of tinymce-content.css are replaced) ── */
+:is(.post-content, .preview-box, .mce-content-body) blockquote:is(.pc-pullquote, .pc-epigraph) { border: 0; background: none; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote:is(.pc-pullquote, .pc-epigraph)::after { content: none; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-epigraph::before { content: none; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote {
+    max-width: 32rem;
+    margin: 2.4rem auto;
+    padding: 0.4rem 0.5rem 0;
+    color: var(--pc-accent);
+    font-size: 1.45em;
+    line-height: 1.4;
+    text-align: center;
+}
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote::before {
+    content: '\00BB';
+    position: static;
+    display: block;
+    height: 0.55em;
+    color: var(--pc-accent);
+    font-size: 2.4em;
+    font-style: normal;
+    line-height: 0.6;
+    opacity: 0.6;
+}
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote:lang(en)::before { content: '\201C'; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote p { color: inherit; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote:is(.align-left, .align-right) {
+    width: 40%;
+    max-width: 17rem;
+    margin-block: 0.4rem 1rem;
+    padding: 0.8rem 0;
+    border-block: 1px solid var(--pc-accent);
+    font-size: 1.2em;
+    text-align: left;
+}
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote.align-right { float: right; clear: right; margin-inline: var(--pc-gap) 0; }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-pullquote.align-left { float: left; clear: left; margin-inline: 0 var(--pc-gap); }
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-epigraph {
+    width: fit-content;
+    max-width: min(24rem, 80%);
+    margin: 0 0 2.2rem auto;
+    padding: 0;
+    color: var(--pc-dim);
+    font-size: 1rem;
+    text-align: right;
+}
+:is(.post-content, .preview-box, .mce-content-body) blockquote.pc-epigraph :is(footer, cite) { display: block; font-family: var(--pc-mono); font-size: 0.75rem; font-style: normal; letter-spacing: 0.08em; }
+
+/* ── Exkurs (details/summary) ── */
+:is(.post-content, .preview-box, .mce-content-body) details { margin: 1.6rem 0; border: 1px solid var(--pc-line); background: var(--pc-box); }
+:is(.post-content, .preview-box, .mce-content-body) details > summary { padding: 0.8rem 1.2rem; color: var(--pc-accent); font-family: var(--pc-mono); font-size: 0.85rem; letter-spacing: 0.06em; cursor: pointer; }
+:is(.post-content, .preview-box, .mce-content-body) details > :not(summary) { margin-inline: 1.2rem; }
+:is(.post-content, .preview-box, .mce-content-body) details[open] { padding-bottom: 0.8rem; }
+
+/* ── Ornament dividers ── */
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider {
+    height: 1.4rem;
+    max-width: 15rem;
+    margin: 2.4rem auto;
+    border: 0;
+    background: var(--pc-accent);
+    -webkit-mask: var(--pc-ornament) center / contain no-repeat;
+    mask: var(--pc-ornament) center / contain no-repeat;
+}
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider--flourish { --pc-ornament: url('/assets/ornaments/flourish-pair.svg'); height: 1.9rem; max-width: 16rem; }
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider--leaves { --pc-ornament: url('/assets/ornaments/divider-leaves.svg'); height: 1.2rem; max-width: 18rem; }
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider--stars { --pc-ornament: url('/assets/ornaments/divider-stars.svg'); height: 1.6rem; max-width: 2rem; }
+:is(.post-content, .preview-box, .mce-content-body) hr.pc-divider--diamonds { --pc-ornament: url('/assets/ornaments/divider-diamonds.svg'); height: 1rem; max-width: 18rem; }
+
+/* ── Phones: nothing floats ── */
+@media (max-width: 576px) {
+    :is(.post-content, .preview-box) :is(img, figure, blockquote.pc-pullquote, aside.pc-margin):is(.align-left, .align-right, .pc-margin) {
+        float: none;
+        width: auto;
+        max-width: 100% !important;
+        margin: 1.4rem auto !important;
+    }
+}
