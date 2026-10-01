@@ -20,6 +20,7 @@ import { EventEmitter } from 'events';
 import logger, { loggerMiddleware } from './middleware/loggerMiddleware.js';
 import helmet from 'helmet';
 import * as config from './config/config.js';
+import { resolveTheme } from './config/themes.js';
 import * as middleware from './middleware/securityMiddleware.js';
 import { requireDatabase } from './middleware/databaseMiddleware.js';
 import { globalLimiter } from './utils/limiters.js';
@@ -129,9 +130,16 @@ if (!__assetVersion) {
   // Fallback: server start timestamp (changes on each deploy)
   __assetVersion = String(Math.floor(Date.now() / 1000));
 }
+// Active theme (fonts, stylesheets, navbar, backdrop). Resolved once; invalid env values fall back.
+const activeTheme = resolveTheme(config.BLOG_THEME, config.BLOG_BACKDROP);
+activeTheme.warnings.forEach(w => logger.warn(w));
+logger.info(`Theme: ${activeTheme.id}${activeTheme.backdrop ? ` (backdrop: ${activeTheme.backdrop})` : ''}`);
+
 // set the values for the views to use
 app.use((req, res, next) => {
   res.locals.assetVersion = __assetVersion;
+  res.locals.theme = activeTheme;
+  res.locals.currentPath = req.path;
   res.locals.pageTitle = 'Sub specie aeternitatis'; //könnte ich für jede Page dann individuell setzen, aber das ist ein guter Default
   res.locals.metaDescription = 'Sub specie aeternitatis – Tech, Programming, Philosophie und mehr.';
   res.locals.metaRobots = '';

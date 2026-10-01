@@ -3782,3 +3782,14 @@ a.tag:hover {
 
 /* ── ABOUT PAGE SVG BACKGROUND ── */
 
+
+/* ── SEARCH PAGE (/search) — additive, same dark language as the post list ── */
+.search-header { margin-bottom: 1.5rem; }
+.search-title { margin: 0 0 1rem; font-size: 1.8rem; }
+.search-page-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search-page-input { flex: 1 1 260px; width: auto; }
+.search-summary { font-family: var(--mono); font-size: 11px; color: var(--dim); letter-spacing: 0.05em; margin: 1rem 0 0; }
+.search-snippet { font-family: var(--mono); font-size: 11px; line-height: 1.72; color: var(--dim); margin: 0.9rem 0 0; }
+.search-snippet mark, .post-title mark { background: rgba(232, 197, 71, 0.25); color: inherit; padding: 0 0.15em; }
+.search-empty-label { font-family: var(--mono); font-size: 10px; color: var(--dim); margin: 1.2rem 0 0.6rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

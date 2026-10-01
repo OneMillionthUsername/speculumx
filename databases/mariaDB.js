@@ -386,6 +386,47 @@ export async function initializeDatabaseSchema() {
     if (conn) conn.release();
   }
 }
+// ---------------------------------------------------------------------------
+// Post search
+// ---------------------------------------------------------------------------
+// LIKE wildcards in user input are escaped with "|" (no backslash, so the SQL mode does not matter).
+const SEARCH_LIKE_ESCAPE = '|';
+
+function escapeLikeTerm(term) {
+  return String(term).replace(/[|%_]/g, (m) => SEARCH_LIKE_ESCAPE + m);
+}
+
+/**
+ * Build the WHERE and relevance parts for a list of search terms. Every term must occur in the
+ * title, the content or the tags (AND). Relevance weights title > tags > content. Only `?`
+ * placeholders are used, the term count (<= 5, see shared/search.js) only decides how many.
+ * @param {string[]} terms
+ */
+function buildSearchClauses(terms) {
+  const like = (column) => `${column} LIKE ? ESCAPE '${SEARCH_LIKE_ESCAPE}'`;
+  const where = [];
+  const whereParams = [];
+  const score = [];
+  const scoreParams = [];
+  for (const term of terms) {
+    const pattern = `%${escapeLikeTerm(term)}%`;
+    where.push(`(${like('title')} OR ${like('content')} OR ${like('tags')})`);
+    whereParams.push(pattern, pattern, pattern);
+    score.push(
+      `(CASE WHEN ${like('title')} THEN 3 ELSE 0 END)`,
+      `(CASE WHEN ${like('tags')} THEN 2 ELSE 0 END)`,
+      `(CASE WHEN ${like('content')} THEN 1 ELSE 0 END)`,
+    );
+    scoreParams.push(pattern, pattern, pattern);
+  }
+  return {
+    where: where.join(' AND '),
+    whereParams,
+    score: score.join(' + '),
+    scoreParams,
+  };
+}
+
 export const DatabaseService = {
   // Posts
   /**
@@ -1019,6 +1060,67 @@ export const DatabaseService = {
       });
     } catch (error) {
       throw new databaseError(`Error in getPostsByTagPaginated: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getPostsCountBySearch(terms) {
+    if (!Array.isArray(terms) || terms.length === 0) return 0;
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const { where, whereParams } = buildSearchClauses(terms);
+      const result = await conn.query(
+        `SELECT COUNT(*) AS count FROM posts WHERE published = 1 AND ${where}`,
+        whereParams,
+      );
+      return Number(result[0].count) || 0;
+    } catch (error) {
+      throw new databaseError(`Error in getPostsCountBySearch: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async searchPostsPaginated(terms, limit, offset) {
+    if (!Array.isArray(terms) || terms.length === 0) return [];
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const { where, whereParams, score, scoreParams } = buildSearchClauses(terms);
+      const result = await conn.query(
+        `SELECT *, (${score}) AS relevance FROM posts WHERE published = 1 AND ${where} ORDER BY relevance DESC, created_at DESC LIMIT ? OFFSET ?`,
+        [...scoreParams, ...whereParams, limit, offset],
+      );
+      return result.map(post => {
+        convertBigInts(post);
+        delete post.relevance;
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        return post;
+      });
+    } catch (error) {
+      throw new databaseError(`Error in searchPostsPaginated: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  // Lightweight variant for the live suggestions: no content, no tags.
+  async searchPostTitles(terms, limit) {
+    if (!Array.isArray(terms) || terms.length === 0) return [];
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const { where, whereParams, score, scoreParams } = buildSearchClauses(terms);
+      const result = await conn.query(
+        `SELECT id, title, slug, created_at, (${score}) AS relevance FROM posts WHERE published = 1 AND ${where} ORDER BY relevance DESC, created_at DESC LIMIT ?`,
+        [...scoreParams, ...whereParams, limit],
+      );
+      return result.map(row => {
+        convertBigInts(row);
+        return { id: row.id, title: row.title, slug: row.slug, created_at: row.created_at };
+      });
+    } catch (error) {
+      throw new databaseError(`Error in searchPostTitles: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }

@@ -1,0 +1,142 @@
+/* ============================================================
+   SOFT THEME — TinyMCE content (loaded inside the editor iframe)
+   Light, matte paper that matches the reading view. The palette comes
+   from the active backdrop: tinymce/modules/theme.js copies the blog's
+   custom properties into the iframe. The values below are the fallback
+   (herbst) for when that has not happened (yet).
+   ============================================================ */
+
+:root {
+    --surface-solid: #fffaf0;
+    --surface-sunken: #f7ecd6;
+    --text: #3a2a1d;
+    --text-dim: #594836;
+    --text-faint: #7b6654;
+    --accent: #a4491b;
+    --accent-strong: #7f3510;
+    --line: rgba(110, 72, 30, 0.13);
+    --line-strong: rgba(110, 72, 30, 0.24);
+    --tone-2: #705200;
+    --font-text: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --font-ui: 'DM Mono', ui-monospace, Menlo, Consolas, monospace;
+    --shadow-rgb: 120 78 30;
+}
+
+html { background: var(--surface-solid); }
+
+body.mce-content-body {
+    margin: 0;
+    padding: 1.6rem 2rem 2.4rem;
+    background: var(--surface-solid);
+    color: var(--text);
+    font-family: var(--font-text);
+    font-variation-settings: 'SOFT' 60, 'WONK' 0;
+    font-size: 1.14rem;
+    line-height: 1.8;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+}
+
+.mce-content-body::selection, .mce-content-body *::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+
+/* Headings */
+.mce-content-body h1, .mce-content-body h2, .mce-content-body h3,
+.mce-content-body h4, .mce-content-body h5, .mce-content-body h6 {
+    margin: 1.8em 0 0.5em;
+    color: var(--text);
+    font-family: var(--font-text);
+    font-variation-settings: 'SOFT' 100, 'WONK' 0;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.012em;
+}
+.mce-content-body h1 { font-size: 2.2rem; margin-top: 0.4em; }
+.mce-content-body h2 { font-size: 1.75rem; }
+.mce-content-body h3 { font-size: 1.4rem; }
+.mce-content-body h4 { font-size: 1.2rem; }
+.mce-content-body h5, .mce-content-body h6 { font-size: 1.05rem; }
+
+.mce-content-body p { margin: 0 0 1.1em; }
+.mce-content-body strong, .mce-content-body b { font-weight: 600; }
+
+/* Links */
+.mce-content-body a { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); text-underline-offset: 0.2em; }
+.mce-content-body a:hover { color: var(--accent-strong); }
+
+/* Lists */
+.mce-content-body ul, .mce-content-body ol { margin: 0 0 1.1em; padding-left: 1.5em; }
+.mce-content-body li { margin-bottom: 0.35em; }
+.mce-content-body li::marker { color: var(--accent); }
+
+/* Images */
+.mce-content-body img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.4rem auto;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px -14px rgb(var(--shadow-rgb) / 0.4);
+}
+
+/* Blockquote */
+.mce-content-body blockquote {
+    margin: 1.6rem 0;
+    padding: 1rem 1.4rem;
+    border: 0;
+    border-left: 4px solid color-mix(in srgb, var(--tone-2) 70%, transparent);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--tone-2) 10%, var(--surface-sunken));
+    color: var(--text-dim);
+    font-style: italic;
+}
+.mce-content-body blockquote p:last-child { margin-bottom: 0; }
+
+/* Code */
+.mce-content-body code {
+    padding: 0.1em 0.45em;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    color: var(--tone-2);
+    font-family: var(--font-ui);
+    font-size: 0.85em;
+}
+.mce-content-body pre, .mce-content-body pre[class*="language-"] {
+    margin: 1.5rem 0;
+    padding: 1.1rem 1.3rem;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface-sunken);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 0.86rem;
+    line-height: 1.7;
+    text-shadow: none;
+}
+.mce-content-body pre code, .mce-content-body pre[class*="language-"] code { padding: 0; background: none; color: inherit; font-size: inherit; text-shadow: none; }
+
+.mce-content-body .token.comment, .mce-content-body .token.prolog, .mce-content-body .token.doctype, .mce-content-body .token.cdata { color: #85735f; font-style: italic; }
+.mce-content-body .token.punctuation { color: #7a6753; }
+.mce-content-body .token.property, .mce-content-body .token.tag, .mce-content-body .token.constant, .mce-content-body .token.symbol, .mce-content-body .token.deleted { color: #a8452a; }
+.mce-content-body .token.boolean, .mce-content-body .token.number { color: #8f5f00; }
+.mce-content-body .token.selector, .mce-content-body .token.attr-name, .mce-content-body .token.string, .mce-content-body .token.char, .mce-content-body .token.builtin, .mce-content-body .token.inserted { color: #4a6b27; }
+.mce-content-body .token.operator, .mce-content-body .token.entity, .mce-content-body .token.url { color: #7a5c38; }
+.mce-content-body .token.atrule, .mce-content-body .token.attr-value, .mce-content-body .token.keyword { color: #75487f; }
+.mce-content-body .token.function, .mce-content-body .token.class-name { color: #2a6489; }
+.mce-content-body .token.regex, .mce-content-body .token.important, .mce-content-body .token.variable { color: #96560a; }
+
+/* Tables */
+.mce-content-body table { width: 100%; margin: 1.4rem 0; border-collapse: collapse; font-size: 0.98rem; }
+.mce-content-body th, .mce-content-body td { padding: 0.65rem 0.9rem; border: 0; border-bottom: 1px solid var(--line-strong); text-align: left; }
+.mce-content-body th { background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); font-family: var(--font-ui); font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; }
+
+.mce-content-body hr { height: 1px; margin: 2.4rem 0; border: 0; background: linear-gradient(90deg, transparent, var(--line-strong), transparent); }
+
+/* Editor helpers (visual blocks, placeholders, selection frames) stay readable on light paper */
+.mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before { color: var(--text-faint); font-style: italic; }
+.mce-content-body .mce-object, .mce-content-body .mce-preview-object { border-color: var(--line-strong); }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }

@@ -1,12 +1,30 @@
 import logger from '../utils/logger.js';
-import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl } from '../public/assets/js/shared/text.js';
+import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl, stripHtmlToText } from '../public/assets/js/shared/text.js';
+import { normalizeQuery, getSearchTerms, buildSnippet, splitHighlight } from '../public/assets/js/shared/search.js';
 import categoryController from './categoryController.js';
-import postController, { getCurrentPostsPaginated, PAGE_SIZE } from './postController.js';
+import postController, { getCurrentPostsPaginated, searchPostsPaginated, PAGE_SIZE } from './postController.js';
 import cardController, { CARDS_PER_PAGE } from './cardController.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
 import { getClientIp } from '../utils/requestUtils.js';
 import contactMailService from '../services/contactMailService.js';
+
+// stripHtmlToText leaves the blank that replaced a closing tag in front of punctuation ("Text .")
+const plainText = (html) => stripHtmlToText(html || '').replace(/\s+([.,;:!?…)])/g, '$1').replace(/\(\s+/g, '(');
+
+/**
+ * Plain-text teaser of at most `maxLen` characters that ends on a whole word (an ellipsis marks a cut).
+ * @param {string} html
+ * @param {number} maxLen
+ * @returns {string}
+ */
+export function excerptAtWordEnd(html, maxLen) {
+  const text = plainText(html);
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > maxLen * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()} …`;
+}
 
 async function showHomePage(req, res) {
   logger.debug(`[HOME] GET / requested from ${req.ip}, User-Agent: ${req.get('User-Agent')}`);
@@ -33,6 +51,16 @@ async function showHomePage(req, res) {
         return { src: base + '-344.webp', srcset: base + '-344.webp 344w, ' + base + '-688.webp 688w' };
       })(),
     }));
+
+    // The newest post, shown larger as "Aktuell" by themes that have a lead card (soft)
+    const newest = (posts || [])[0];
+    const leadPost = newest ? {
+      title: decodeHtmlEntities(newest.title || ''),
+      slug: newest.slug,
+      excerpt: excerptAtWordEnd(newest.excerpt_source, 280),
+      created_at: newest.created_at,
+      previewImage: featuredPosts[0].previewImage,
+    } : null;
 
     const popularPosts = (posts || [])
       .slice()
@@ -78,7 +106,7 @@ async function showHomePage(req, res) {
 
     logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
     applySsrNoCache(res, { varyCookie: true });
-    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, cardsPagination, isAdmin, csrfToken, categories });
+    res.render('index', { featuredPosts, leadPost, popularPosts, archiveYears, cards, cardsPagination, isAdmin, csrfToken, categories });
     logger.debug('[HOME] GET / - Successfully rendered index.ejs');
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);
@@ -169,6 +197,49 @@ async function showPostsPage(req, res) {
   }
 }
 
+async function showSearchPage(req, res) {
+  const isAdmin = getSsrAdmin(res);
+  const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+  const searchQuery = normalizeQuery(req.query && req.query.q);
+  const terms = getSearchTerms(searchQuery);
+  const page = Math.max(1, parseInt(req.query && req.query.page, 10) || 1);
+  const view = { isAdmin, csrfToken, searchQuery, terms, posts: [], total: 0, pagination: null, categories: [], searchFailed: false };
+
+  try {
+    if (terms.length > 0) {
+      const { posts, total } = await searchPostsPaginated(terms, page);
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      if (page > 1 && (totalPages === 0 || page > totalPages)) {
+        applySsrNoCache(res, { varyCookie: true });
+        return res.status(404).render('notFound', { isAdmin, csrfToken });
+      }
+      view.total = total;
+      // Highlighting is prepared as segments; the template escapes each one and wraps matches in <mark>
+      view.posts = posts.map(p => ({
+        ...p,
+        titleParts: splitHighlight(p.title || '', terms),
+        snippetParts: splitHighlight(buildSnippet(plainText(p.content), terms), terms),
+      }));
+      view.pagination = {
+        currentPage: page,
+        totalPages,
+        baseUrl: '/search',
+        extraParams: `&q=${encodeURIComponent(searchQuery)}`,
+      };
+    }
+    if (view.posts.length === 0) {
+      // Something to click on instead of a dead end
+      view.categories = await categoryController.getAllCategories().catch(() => []);
+    }
+  } catch (err) {
+    logger.error('[SEARCH] Error rendering searchResults:', err && err.message);
+    view.searchFailed = true;
+  }
+
+  applySsrNoCache(res, { varyCookie: true });
+  return res.status(view.searchFailed ? 500 : 200).render('searchResults', view);
+}
+
 function getCreateViewBaseContext(req, res) {
   const isAdmin = getSsrAdmin(res);
   const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
@@ -241,6 +312,7 @@ export default {
   redirectAboutHtml,
   submitContactForm,
   showPostsPage,
+  showSearchPage,
   showCreatePostPage,
   showUpdatePostByIdPage,
   showAdminPage,

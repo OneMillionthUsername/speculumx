@@ -1,12 +1,14 @@
 <% 
     pageTitle = 'Meistgelesene Posts - Sub specie aeternitatis';
     metaDescription = 'The most read posts on philosophy, tech, science and more.';
+    const __itemHeading = (typeof theme !== 'undefined' && theme && theme.id === 'soft') ? 'h2' : 'h3';
 %>
 
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="content-area">
+                <h1 class="sr-only">Meistgelesene Beiträge</h1>
                 <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
                     <p class="text-muted small"><%= errorMessage %></p>
                 <% } %>
@@ -16,7 +18,7 @@
                             <article class="most-read-item">
                                 <span class="rank">#<%= idx + 1 %></span>
                                 <div class="most-read-content">
-                                    <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('id/' + post.id) %>"><%= post.title %></a></h3>
+                                    <<%= __itemHeading %>><a class="post-link-style" href="/blogpost/<%= post.slug || ('id/' + post.id) %>"><%= post.title %></a></<%= __itemHeading %>>
                                     <p><%= (post.views || 0) %> views | <%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
                                     <p class="post-excerpt"><%= post.excerpt %></p>
                                 </div>

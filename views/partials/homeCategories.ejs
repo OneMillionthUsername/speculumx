@@ -1,0 +1,10 @@
+<h2 class="sidebar-title">Kategorien</h2>
+<div>
+    <ul class="list-group">
+        <% (typeof categories !== 'undefined' && Array.isArray(categories) ? categories : []).forEach(function(category) { %>
+            <li class="list-group-item">
+                <a href="/blogpost/category/<%= category.slug %>"><%= category.name %>&nbsp;</a>
+            </li>
+        <% }); %>
+    </ul>
+</div>

@@ -1,0 +1,86 @@
+<%
+    const __q = typeof searchQuery === 'string' ? searchQuery : '';
+    const __terms = (typeof terms !== 'undefined' && Array.isArray(terms)) ? terms : [];
+    const __posts = (typeof posts !== 'undefined' && Array.isArray(posts)) ? posts : [];
+    const __total = typeof total === 'number' ? total : __posts.length;
+    pageTitle = __q ? 'Suche: ' + __q + ' - Sub specie aeternitatis' : 'Suche - Sub specie aeternitatis';
+    metaDescription = 'Suche in den Blogposts von Sub specie aeternitatis.';
+    metaRobots = 'noindex, follow';
+%>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="content-area search-page">
+                <header class="search-header">
+                    <h1 class="search-title">Suche</h1>
+                    <form class="search-page-form" action="/search" method="GET" role="search" aria-label="Suche auf dieser Seite">
+                        <label for="search-page-input" class="sr-only">Suchbegriff</label>
+                        <input id="search-page-input" class="form-control search-page-input" type="search" name="q"
+                               value="<%= __q %>" placeholder="Titel, Inhalt oder Tag …" maxlength="100"
+                               autocomplete="off"<% if (!__q) { %> autofocus<% } %>>
+                        <button type="submit" class="btn btn-outline-primary">Suchen</button>
+                    </form>
+                    <p class="search-summary" role="status">
+                        <% if (typeof searchFailed !== 'undefined' && searchFailed) { %>
+                            Die Suche ist gerade nicht verfügbar. Bitte versuche es später noch einmal.
+                        <% } else if (__terms.length === 0 && !__q) { %>
+                            Gesucht wird in Titeln, Texten und Tags. Mehrere Wörter müssen alle vorkommen.
+                        <% } else if (__terms.length === 0) { %>
+                            Bitte gib mindestens zwei Zeichen ein.
+                        <% } else if (__total === 0) { %>
+                            Keine Treffer für <strong>„<%= __q %>“</strong>.
+                        <% } else { %>
+                            <strong><%= __total %></strong> Treffer für <strong>„<%= __q %>“</strong>
+                        <% } %>
+                    </p>
+                </header>
+
+                <% if (__posts.length > 0) { %>
+                    <div id="searchResults" class="search-results">
+                        <% __posts.forEach(function(post) { %>
+                            <article class="blog-post-card search-result">
+                                <div class="post-meta">
+                                    <span class="post-date"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
+                                    <span class="post-author">von <%= post.author || 'Gast' %></span>
+                                </div>
+                                <h2 class="post-title">
+                                    <a href="/blogpost/<%= post.slug || ('id/' + post.id) %>" class="post-link"><% (post.titleParts && post.titleParts.length ? post.titleParts : [{ text: post.title || 'Untitled', match: false }]).forEach(function(part) { %><% if (part.match) { %><mark><%= part.text %></mark><% } else { %><%= part.text %><% } %><% }); %></a>
+                                </h2>
+                                <% if (post.snippetParts && post.snippetParts.length) { %>
+                                <p class="search-snippet"><% post.snippetParts.forEach(function(part) { %><% if (part.match) { %><mark><%= part.text %></mark><% } else { %><%= part.text %><% } %><% }); %></p>
+                                <% } %>
+                                <% if (Array.isArray(post.tags) && post.tags.length > 0) { %>
+                                <div class="post-tags-container">
+                                    <% post.tags.forEach(function(tag) { %>
+                                        <a href="/blogpost/tag/<%= encodeURIComponent(tag) %>" class="tag"><%= tag %></a>
+                                    <% }); %>
+                                </div>
+                                <% } %>
+                            </article>
+                        <% }); %>
+                    </div>
+                    <%- include('partials/pagination', { pagination: typeof pagination !== 'undefined' ? pagination : null }) %>
+                <% } else if (!(typeof searchFailed !== 'undefined' && searchFailed)) { %>
+                    <div class="no-posts-card search-empty">
+                        <h3 class="mb-2">Nichts gefunden</h3>
+                        <p class="text-muted">Probiere ein kürzeres oder anderes Wort. Die Suche ignoriert Groß- und Kleinschreibung sowie Akzente.</p>
+                        <% if (typeof categories !== 'undefined' && Array.isArray(categories) && categories.length > 0) { %>
+                            <p class="search-empty-label">Oder stöbere nach Kategorie:</p>
+                            <div class="post-tags-container">
+                                <% categories.forEach(function(category) { %>
+                                    <a href="/blogpost/category/<%= category.slug %>" class="tag"><%= category.name %></a>
+                                <% }); %>
+                            </div>
+                        <% } %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    <nav class="navigation mt-4 mb-5" aria-label="Seiten-Navigation">
+        <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
+        <a href="/posts" class="btn btn-outline-secondary">Alle Blogposts</a>
+        <a href="/blogpost/archive" class="btn btn-outline-secondary">Archiv</a>
+    </nav>
+</div>

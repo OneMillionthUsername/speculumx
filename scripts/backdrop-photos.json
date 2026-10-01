@@ -1,0 +1,41 @@
+{
+  "_comment": "Photos for the soft theme's backdrops, imported with `npm run import:backdrops`. Only list photos whose licence allows free use on a website; keep author/licence/page accurate (shown in the footer). `source` is a direct image URL or a path relative to the repository. `focusY` is the vertical focus of the crop (CSS background-position).",
+  "photos": [
+    {
+      "backdrop": "herbst",
+      "id": "allee",
+      "source": "https://images.pexels.com/photos/2054397/pexels-photo-2054397.jpeg?auto=compress&cs=tinysrgb&w=2400",
+      "author": "Frans van Heerden",
+      "license": "Pexels License",
+      "page": "https://www.pexels.com/photo/empty-road-2054397/",
+      "focusY": "50%"
+    },
+    {
+      "backdrop": "herbst-himmel",
+      "id": "strasse",
+      "source": "https://images.pexels.com/photos/67517/pexels-photo-67517.jpeg?auto=compress&cs=tinysrgb&w=2400",
+      "author": "Tim Gouw",
+      "license": "Pexels License",
+      "page": "https://www.pexels.com/photo/street-road-near-green-and-yellow-trees-67517/",
+      "focusY": "55%"
+    },
+    {
+      "backdrop": "herbst-wald",
+      "id": "waldweg",
+      "source": "https://images.pexels.com/photos/1496373/pexels-photo-1496373.jpeg?auto=compress&cs=tinysrgb&w=2400",
+      "author": "Artem Saranin",
+      "license": "Pexels License",
+      "page": "https://www.pexels.com/photo/photo-of-a-pathway-in-a-forest-1496373/",
+      "focusY": "40%"
+    },
+    {
+      "backdrop": "herbst-baeume",
+      "id": "laubgang",
+      "source": "https://images.pexels.com/photos/1006121/pexels-photo-1006121.jpeg?auto=compress&cs=tinysrgb&w=2400",
+      "author": "Min An",
+      "license": "Pexels License",
+      "page": "https://www.pexels.com/photo/scenic-view-of-the-forest-during-sunrise-1006121/",
+      "focusY": "62%"
+    }
+  ]
+}

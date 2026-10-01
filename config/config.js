@@ -27,6 +27,9 @@ export const DB_NAME = process.env.DB_NAME;
 export const JWT_SECRET = process.env.JWT_SECRET;
 export const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'your_gemini_api_key_here';
+// Look of the public pages. Valid values and fallbacks live in config/themes.js.
+export const BLOG_THEME = process.env.BLOG_THEME || '';
+export const BLOG_BACKDROP = process.env.BLOG_BACKDROP || '';
 
 
 function parseBoolean(value, defaultValue = false) {

@@ -1,0 +1,16 @@
+<h2 class="sidebar-title">Archiv</h2>
+<div>
+    <ul class="list-group">
+        <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
+            <% archiveYears.forEach(function(y) { %>
+                <li class="list-group-item">
+                    <a href="/blogpost/archive?<%= 'year=' + y %>"><%= y %>&nbsp;</a>
+                </li>
+            <% }); %>
+        <% } else { %>
+            <li class="list-group-item">
+                <span class="dropdown-item text-muted">Keine Jahre</span>
+            </li>
+        <% } %>
+    </ul>
+</div>

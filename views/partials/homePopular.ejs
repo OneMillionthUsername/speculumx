@@ -1,0 +1,22 @@
+<%# Popular posts for the sidebar. Params: items (array), hideWhenEmpty (bool: render nothing instead of "Keine Daten") %>
+<% const __items = (typeof items !== 'undefined' && Array.isArray(items)) ? items : []; %>
+<% if (__items.length > 0 || !(typeof hideWhenEmpty !== 'undefined' && hideWhenEmpty)) { %>
+<h2 class="sidebar-title">Beliebte Beiträge</h2>
+<ul class="nav-list" id="popular-posts">
+    <% if (__items.length > 0) { %>
+        <% __items.forEach(function(p) { %>
+            <li>
+                <% if (p.slug) { %>
+                    <a href="/blogpost/<%= p.slug %>"><%= p.title %></a>
+                <% } else if (p.id !== undefined && p.id !== null) { %>
+                    <a href="/blogpost/id/<%= p.id %>"><%= p.title %></a>
+                <% } else { %>
+                    <span><%= p.title %></span>
+                <% } %>
+            </li>
+        <% }); %>
+    <% } else { %>
+        <li class="text-muted small">Keine Daten</li>
+    <% } %>
+</ul>
+<% } %>

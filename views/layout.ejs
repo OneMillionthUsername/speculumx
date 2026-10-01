@@ -1,8 +1,24 @@
+<%
+    // Active theme comes from config/themes.js via app.js (res.locals.theme).
+    // Without it (views rendered outside the app) the layout behaves like the original "radical" theme.
+    const __theme = (typeof theme !== 'undefined' && theme) ? theme : {
+        id: 'radical',
+        fontsUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap',
+        stylesheets: ['/assets/css/main.css'],
+        scripts: [],
+        navbar: 'partials/navbar',
+        prismStylesheet: '/assets/css/prism-okaidia.min.css',
+        tinymceContentCss: true,
+        backdrop: null,
+    };
+    const __ver = typeof assetVersion !== 'undefined' ? assetVersion : '';
+-%>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="<%= __theme.id %>"<% if (__theme.backdrop) { %> data-backdrop="<%= __theme.backdrop %>"<% } %>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <% if (__theme.colorScheme) { %><meta name="color-scheme" content="<%= __theme.colorScheme %>"><% } %>
     <%# Google Fonts: preconnect + non-blocking load via print/onload trick %>
     <%# Render-blocking external stylesheets cause a white-flash before first paint, %>
     <%# which then animates via "* { transition: all 0.3s ease }" → visible flicker. %>
@@ -11,11 +27,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" id="google-fonts-link"
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap"
+        href="<%= __theme.fontsUrl %>"
         media="print">
 
     <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
     (function() {
+        document.documentElement.classList.add('js');
         var link = document.getElementById('google-fonts-link');
         if (link) {
         link.onload = function() { this.rel = 'stylesheet'; this.media = 'all'; };
@@ -23,19 +40,22 @@
     })();
     </script>
     <noscript>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap">
+        <link rel="stylesheet" href="<%= __theme.fontsUrl %>">
     </noscript>
 
-    <%# TinyMCE CSS nur wenn nötig %>
-    <% if (typeof useTinyMce !== 'undefined' && useTinyMce) { %>
+    <%# TinyMCE CSS nur wenn nötig (und vom Theme gewünscht) %>
+    <% if (__theme.tinymceContentCss && typeof useTinyMce !== 'undefined' && useTinyMce) { %>
     <link rel="stylesheet" href="/assets/css/tinymce-content.css">
     <% } %>
-    <%# Prism.js Syntax-Highlighting CSS nur wenn nötig %>
-    <% if (typeof usePrism !== 'undefined' && usePrism) { %>
-    <link rel="stylesheet" href="/assets/css/prism-okaidia.min.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
+    <%# Prism.js Syntax-Highlighting CSS nur wenn nötig (Themes ohne eigene Datei bringen Token-Farben selbst mit) %>
+    <% if (__theme.prismStylesheet && typeof usePrism !== 'undefined' && usePrism) { %>
+    <link rel="stylesheet" href="<%= __theme.prismStylesheet %>?v=<%= __ver %>">
     <% } %>
 
-    <link rel="stylesheet" href="/assets/css/main.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
+    <%# Stylesheets des aktiven Themes %>
+    <% __theme.stylesheets.forEach(function(href) { %>
+    <link rel="stylesheet" href="<%= href %>?v=<%= __ver %>">
+    <% }); %>
 
     <title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Sub specie aeternitatis' %></title>
 
@@ -51,10 +71,10 @@
     <%- extraHead %>
     <% } %>
 </head>
-<body>
-    <%- include('partials/navbar.ejs') %>
+<body class="theme-<%= __theme.id %>">
+    <%- include(__theme.navbar + '.ejs') %>
 
-    <main>
+    <main id="main">
     <%- body %>
     </main>
 
@@ -62,11 +82,14 @@
         <div class="container text-center py-4">
             <span class="footer-title">Sub specie aeternitatis</span>
             <p class="footer-text mb-2">© 2026 BitQuake Digital &nbsp;|&nbsp; Philosophie, Wissenschaft & KI</p>
+            <% if (__theme.photoCredit) { %>
+            <p class="footer-credit">Hintergrundfoto: <a href="<%= __theme.photoCredit.url %>" target="_blank" rel="noopener noreferrer"><%= __theme.photoCredit.author %></a> &middot; <%= __theme.photoCredit.license %></p>
+            <% } %>
             <nav aria-label="Footer-Navigation" class="footer-links">
-                <a href="/about">Kontakt</a> &nbsp;|&nbsp;
-                <a href="/posts">Blogposts</a> &nbsp;|&nbsp;
-                <a href="/blogpost/archive">Archiv</a> &nbsp;|&nbsp;
-                <a href="/impressum">Impressum</a> &nbsp;|&nbsp;
+                <a href="/about">Kontakt</a> <span aria-hidden="true">&nbsp;|&nbsp;</span>
+                <a href="/posts">Blogposts</a> <span aria-hidden="true">&nbsp;|&nbsp;</span>
+                <a href="/blogpost/archive">Archiv</a> <span aria-hidden="true">&nbsp;|&nbsp;</span>
+                <a href="/impressum">Impressum</a> <span aria-hidden="true">&nbsp;|&nbsp;</span>
                 <a href="/datenschutz">Datenschutz</a>
             </nav>
         </div>
@@ -76,6 +99,9 @@
 
 
     <script src="/assets/js/page-initializers.js" type="module"></script>
+    <% __theme.scripts.forEach(function(src) { %>
+    <script src="<%= src %>?v=<%= __ver %>" type="module"></script>
+    <% }); %>
 
     <% if (typeof script !== 'undefined' && script) { %>
     <%- script %>

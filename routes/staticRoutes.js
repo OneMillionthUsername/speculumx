@@ -1,7 +1,7 @@
 import express from 'express';
 import staticPageController from '../controllers/staticPageController.js';
 import csrfProtection from '../utils/csrf.js';
-import { contactLimiter } from '../utils/limiters.js';
+import { contactLimiter, globalLimiter } from '../utils/limiters.js';
 import { validateFields } from '../middleware/validationMiddleware.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
@@ -24,6 +24,7 @@ staticRouter.get('/blogpost/update/:id', csrfProtection, staticPageController.sh
 
 staticRouter.get('/about.html', staticPageController.redirectAboutHtml);
 staticRouter.get('/posts', csrfProtection, staticPageController.showPostsPage);
+staticRouter.get('/search', globalLimiter, csrfProtection, staticPageController.showSearchPage);
 staticRouter.get('/admin', csrfProtection, authenticateToken, requireAdmin, staticPageController.showAdminPage);
 
 staticRouter.post(
