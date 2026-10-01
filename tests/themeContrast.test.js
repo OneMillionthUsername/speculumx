@@ -69,6 +69,15 @@ function pairs(v) {
       [`${name} on its hover tint (26%)`, v[name], blend(v[name], surface, 0.26), 4.5],
     );
   }
+  // Boxes in post content (content.css): "Hinweis" (tone-3, 9 % on sunken), "Exkurs" (tone-4, 7 % on sunken)
+  const note = blend(v['tone-3'], sunken, 0.09);
+  const excursus = blend(v['tone-4'], sunken, 0.07);
+  out.push(
+    ['Hinweis label on its box', v['tone-3'], note, 4.5],
+    ['text on Hinweis box', v.text, note, 7],
+    ['dim on Hinweis box', v['text-dim'], note, 4.5],
+    ['text on Exkurs box', v.text, excursus, 7],
+  );
   for (const name of ['tone-1', 'tone-2', 'tone-3', 'tone-4']) {
     const card = blend(v[name], surface, 0.26); // tinted cards and panels
     out.push(

@@ -28,7 +28,7 @@
                                     <span class="post-date"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
                                     <span class="post-author">von <%= post.author || 'Gast' %></span>
                                 </div>
-                                <h2 class="post-title">
+                                <h2 class="post-title"<% if (post.lang && post.lang !== 'de') { %> lang="<%= post.lang %>"<% } %>>
                                     <% if (post.slug) { %>
                                         <a href="/blogpost/<%= post.slug %>" class="post-link"><%= post.title || 'Untitled' %></a>
                                     <% } else if (post.id !== undefined && post.id !== null) { %>
@@ -37,7 +37,7 @@
                                         <span class="post-link"><%= post.title || 'Untitled' %></span>
                                     <% } %>
                                 </h2>
-                                <% if (post.excerpt) { %><div class="post-excerpt"><%= post.excerpt %></div><% } %>
+                                <% if (post.excerpt) { %><div class="post-excerpt"<% if (post.lang && post.lang !== 'de') { %> lang="<%= post.lang %>"<% } %>><%= post.excerpt %></div><% } %>
                                 <div class="post-footer">
                                     <span class="post-views"><%= post.views || 0 %> Aufrufe</span>
                                 </div>

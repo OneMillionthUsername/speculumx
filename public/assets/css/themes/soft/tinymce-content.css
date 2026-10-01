@@ -4,6 +4,8 @@
    from the active backdrop: tinymce/modules/theme.js copies the blog's
    custom properties into the iframe. The values below are the fallback
    (herbst) for when that has not happened (yet).
+   Images, boxes, quotes and ornaments from the "Gestaltung" menu are
+   styled by content.css, which TinyMCE loads after this file.
    ============================================================ */
 
 :root {
@@ -16,7 +18,10 @@
     --accent-strong: #7f3510;
     --line: rgba(110, 72, 30, 0.13);
     --line-strong: rgba(110, 72, 30, 0.24);
+    --tone-1: #8e4021;
     --tone-2: #705200;
+    --tone-3: #475f24;
+    --tone-4: #734876;
     --font-text: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
     --font-ui: 'DM Mono', ui-monospace, Menlo, Consolas, monospace;
     --shadow-rgb: 120 78 30;
@@ -140,3 +145,7 @@ body.mce-content-body {
 .text-left { text-align: left; }
 .text-right { text-align: right; }
 .text-justify { text-align: justify; }
+
+/* Layout helpers that only show while editing: where two columns start and end, what reaches beyond the column */
+.mce-content-body section.pc-columns { outline: 1px dashed var(--line-strong); outline-offset: 0.5rem; }
+.mce-content-body .pc-wide { outline: 2px dashed color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 4px; }

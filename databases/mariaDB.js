@@ -27,6 +27,13 @@ let pool;
  */
 let isMockMode = false;
 
+/**
+ * Whether posts.layout (the reading layout chosen in the editor) exists. initializeDatabaseSchema() adds the
+ * column to older databases; if that is not possible, post writes leave the layout out instead of failing.
+ * @type {boolean}
+ */
+let hasPostLayoutColumn = true;
+
 function createMockPool() {
   logger.info('Using mock database pool for testing');
   return {
@@ -228,6 +235,7 @@ export async function initializeDatabaseSchema() {
             author VARCHAR(100) DEFAULT 'author',
             views BIGINT DEFAULT 0,
             published BOOLEAN DEFAULT 1,
+            layout VARCHAR(20) NOT NULL DEFAULT 'standard',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             
@@ -237,6 +245,21 @@ export async function initializeDatabaseSchema() {
             INDEX idx_posts_published (published)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    // Reading layout per post (models/postModel.js POST_LAYOUTS). CREATE TABLE above does not touch existing
+    // tables, so databases from before this column get it here. Without it the site keeps working: posts
+    // are shown in the standard layout and saved without one.
+    try {
+      await conn.query('ALTER TABLE posts ADD COLUMN IF NOT EXISTS layout VARCHAR(20) NOT NULL DEFAULT \'standard\' AFTER published');
+      hasPostLayoutColumn = true;
+    } catch (error) {
+      logger.error(`Could not add posts.layout: ${error.message}`);
+      try {
+        const columns = await conn.query('SHOW COLUMNS FROM posts LIKE \'layout\'');
+        hasPostLayoutColumn = Array.isArray(columns) && columns.length > 0;
+      } catch (_e) {
+        hasPostLayoutColumn = false;
+      }
+    }
 
     // Comments-Tabelle
     await conn.query(`
@@ -821,6 +844,7 @@ export const DatabaseService = {
         throw new databaseError('Post is null or not an object');
       }
       const updatableFields = ['title', 'content', 'tags', 'published', 'author', 'updated_at', 'category_id'];
+      if (hasPostLayoutColumn) updatableFields.push('layout');
       const hasUpdatableField = updatableFields.some(field => field in post);
       if (!hasUpdatableField) {
         throw new databaseError('No fields provided for update');
@@ -1195,6 +1219,7 @@ export const DatabaseService = {
       conn = await getDatabasePool().getConnection();
       // Build explicit parameterized INSERT to avoid driver-specific 'SET ?' expansion issues
       const allowedFields = ['title','slug','content','tags','author','views','published','created_at','updated_at', 'category_id'];
+      if (hasPostLayoutColumn) allowedFields.push('layout');
       const keys = Object.keys(postData).filter(k => allowedFields.includes(k));
       if (keys.length === 0) {
         throw new Error('No valid fields provided for insert');

@@ -391,7 +391,16 @@
     .archive-post-item { grid-template-columns: minmax(0, 1fr); grid-template-areas: "date" "title" "excerpt"; row-gap: 0.3rem; }
 }
 
-/* ── Reading view ── */
+/* ── Reading view ──
+   The text column (--measure) depends on the layout chosen in the editor (models/postModel.js POST_LAYOUTS):
+   standard = the classic column; wide = a wider page and column; magazine = a wider page around a classic
+   column, whose margins take hanging images, quotes and notes (content.css). The article is a size
+   container, so content.css can let elements reach beyond the column into the page (cqi units). */
+#blogpost-content { --measure: var(--reading-max); }
+#blogpost-content.post-layout-wide { --measure: 48rem; }
+#blogpost-content.post-layout-magazine { --measure: 40rem; }
+#post-article { container: post / inline-size; }
+
 #blogpost-content {
     padding: clamp(1.4rem, 5vw, 3.2rem) clamp(1.2rem, 5vw, 3.4rem);
     border: 1px solid var(--line);
@@ -401,14 +410,14 @@
     backdrop-filter: blur(10px);
     box-shadow: var(--shadow-2);
 }
-.post-header { max-width: var(--reading-max); margin: 0 auto 1.8rem; }
+.post-header { max-width: var(--measure, var(--reading-max)); margin: 0 auto 1.8rem; }
 #blogpost-content .post-title { margin: 0 0 0.9rem; font-size: clamp(1.9rem, 5vw, 2.9rem); font-weight: 450; line-height: 1.12; letter-spacing: -0.02em; }
 .post-meta-info { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; color: var(--text-dim); font-family: var(--font-ui); font-size: 0.8125rem; letter-spacing: 0.05em; }
 .post-meta-info .post-date, .post-meta-info .post-updated, .post-reading-time { font-family: var(--font-ui); font-size: 0.8125rem; font-style: normal; color: var(--text-dim); letter-spacing: 0.05em; }
 .post-meta-info .post-updated { color: var(--accent); }
 
 .post-content {
-    max-width: var(--reading-max);
+    max-width: var(--measure, var(--reading-max));
     margin: 0 auto 2rem;
     font-size: 1.14rem;
     line-height: 1.82;
@@ -490,11 +499,46 @@
 .token.important, .token.bold { font-weight: 600; }
 .token.italic { font-style: italic; }
 
-#blogpost-content .post-footer { max-width: var(--reading-max); margin: 0 auto; padding-top: 1.4rem; border-top: 1px solid var(--line); }
+#blogpost-content .post-footer { max-width: var(--measure, var(--reading-max)); margin: 0 auto; padding-top: 1.4rem; border-top: 1px solid var(--line); }
 #blogpost-content .post-footer .post-tags-container { gap: 0.6rem 0.8rem; }
 
+/* Magazine layout: a centred title page with a flourish below it */
+.post-layout-magazine .post-header { text-align: center; }
+.post-layout-magazine #post-article .post-title { font-size: clamp(2.1rem, 6vw, 3.4rem); font-style: italic; text-wrap: balance; }
+.post-layout-magazine .post-meta-info { justify-content: center; }
+.post-layout-magazine .post-header::after {
+    content: '';
+    display: block;
+    width: min(15rem, 70%);
+    height: 1.6rem;
+    margin: 1.6rem auto 0;
+    background: color-mix(in srgb, var(--accent) 70%, transparent);
+    -webkit-mask: url('/assets/ornaments/flourish-pair.svg') center / contain no-repeat;
+    mask: url('/assets/ornaments/flourish-pair.svg') center / contain no-repeat;
+}
+
+/* ── Hyphenation ──
+   Running text is hyphenated by the browser, in the language of its element (<html lang="de">, English posts
+   and teasers carry lang="en"). Only words of 6+ letters are split, never before 3 or after 3 letters.
+   Headings are only hyphenated on narrow screens, where a long German compound would not fit at all.
+   The post text itself is handled in content.css. */
+.post-excerpt, .search-snippet, .featured-post-excerpt, .lead-post-excerpt, .card-text, .comment-text,
+.about-text, .about-list, .container.my-5 .col-lg-8 :is(p, li) {
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    hyphenate-limit-chars: 6 3 3;
+}
+@media (max-width: 600px) {
+    .blog-post-card .post-title, .most-read-content :is(h2, h3), .archive-post-item h3, .featured-post-title,
+    .lead-post-title, .card-title, #post-article .post-title {
+        -webkit-hyphens: auto;
+        hyphens: auto;
+        hyphenate-limit-chars: 10 4 4;
+    }
+}
+
 /* ── Comments ── */
-.comments-section { max-width: var(--reading-max); margin: 3rem auto 0; clear: both; }
+.comments-section { max-width: max(var(--reading-max), var(--measure, var(--reading-max))); margin: 3rem auto 0; clear: both; }
 .comments-divider hr { margin: 0 0 2rem; }
 .comments-title { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.6rem; font-size: 1.5rem; font-style: italic; }
 

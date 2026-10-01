@@ -55,6 +55,65 @@ describe('DatabaseService queries', () => {
     });
   });
 
+  describe('reading layout of posts (posts.layout)', () => {
+    const post = { title: 'Titel', slug: 'titel', content: '<p>x</p>', category_id: 1, layout: 'magazine' };
+
+    it('adds the layout column to an existing posts table', async () => {
+      mockQuery.mockReset();
+      mockQuery.mockResolvedValue({});
+
+      await expect(initializeDatabaseSchema()).resolves.toBe(true);
+
+      expect(mockQuery).toHaveBeenCalledWith(expect.stringMatching(/ALTER TABLE posts ADD COLUMN IF NOT EXISTS layout VARCHAR\(20\) NOT NULL DEFAULT 'standard'/));
+    });
+
+    it('stores the layout when a post is created or updated', async () => {
+      mockQuery.mockReset();
+      mockQuery.mockResolvedValue({ affectedRows: 1, insertId: 9n });
+
+      await DatabaseService.createPost(post);
+      expect(mockQuery.mock.calls[0][0]).toMatch(/INSERT INTO posts \(.*`layout`.*\)/);
+      expect(mockQuery.mock.calls[0][1]).toContain('magazine');
+
+      mockQuery.mockClear();
+      await DatabaseService.updatePost({ id: 9, title: 'Titel', layout: 'wide' });
+      expect(mockQuery.mock.calls[0][0]).toMatch(/UPDATE posts SET .*`layout` = \?/);
+      expect(mockQuery.mock.calls[0][1]).toEqual(['Titel', 'wide', 9]);
+    });
+
+    it('keeps saving posts, without the layout, when the column cannot be added', async () => {
+      mockQuery.mockReset();
+      mockQuery.mockImplementation(async (sql) => {
+        if (/ALTER TABLE posts/.test(sql)) throw new Error('ALTER command denied');
+        if (/SHOW COLUMNS FROM posts/.test(sql)) return [];
+        return { affectedRows: 1, insertId: 10n };
+      });
+      await expect(initializeDatabaseSchema()).resolves.toBe(true);
+
+      mockQuery.mockClear();
+      await DatabaseService.createPost(post);
+      expect(mockQuery.mock.calls[0][0]).not.toMatch(/layout/);
+
+      mockQuery.mockClear();
+      await DatabaseService.updatePost({ id: 10, title: 'Titel', layout: 'wide' });
+      expect(mockQuery.mock.calls[0][0]).not.toMatch(/layout/);
+    });
+
+    it('uses the column when it exists although ALTER is not allowed', async () => {
+      mockQuery.mockReset();
+      mockQuery.mockImplementation(async (sql) => {
+        if (/ALTER TABLE posts/.test(sql)) throw new Error('ALTER command denied');
+        if (/SHOW COLUMNS FROM posts/.test(sql)) return [{ Field: 'layout' }];
+        return { affectedRows: 1, insertId: 11n };
+      });
+      await expect(initializeDatabaseSchema()).resolves.toBe(true);
+
+      mockQuery.mockClear();
+      await DatabaseService.updatePost({ id: 11, layout: 'wide' });
+      expect(mockQuery.mock.calls[0][0]).toMatch(/`layout` = \?/);
+    });
+  });
+
   describe('auto-generated draft cards', () => {
     it('createCard stores the auto_generated flag and defaults it to 0', async () => {
       mockQuery.mockResolvedValue({ affectedRows: 1, insertId: 5n });

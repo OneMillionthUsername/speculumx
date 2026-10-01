@@ -70,6 +70,14 @@ describe('layout.ejs', () => {
     expect(html).toContain('Pexels License');
   });
 
+  it('links "BitQuake" in the footer to the shop, in every theme', () => {
+    for (const theme of [resolveTheme('soft', ''), resolveTheme('radical', ''), undefined]) {
+      const html = render({ theme });
+      expect(html).toContain('<a href="https://bitquake.at" target="_blank" rel="noopener">BitQuake</a> Digital');
+      expect(html.match(/BitQuake/g)).toHaveLength(1);
+    }
+  });
+
   it('marks the current page in the soft navbar', () => {
     const html = render({ theme: resolveTheme('soft', ''), currentPath: '/blogpost/archive' });
 

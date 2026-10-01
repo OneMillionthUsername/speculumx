@@ -40,6 +40,24 @@
 /* Admin list pages reuse .blog-post-card; their footers hold buttons and forms */
 #drafts-list .post-footer form, #unpublished-list .post-footer form { display: inline-flex; margin: 0; }
 
+/* Card list (/cards/manage): every image sits in the same fixed frame, whatever size the source has */
+.admin-card { display: grid; grid-template-columns: 172px minmax(0, 1fr); gap: 1.4rem; align-items: start; }
+.admin-card-thumb {
+    width: 172px;
+    height: 155px;
+    overflow: hidden;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--text) 7%, var(--surface-solid));
+    box-shadow: var(--shadow-1);
+}
+.admin-card-thumb img { display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+.admin-card-thumb-empty { display: grid; place-items: center; height: 100%; color: var(--text-faint); font-family: var(--font-ui); font-size: 0.8125rem; }
+.admin-card-body { min-width: 0; }
+.admin-card .post-title { overflow-wrap: break-word; }
+.admin-card-body > p.text-muted { margin: 0.45rem 0 0; }
+.admin-card .post-footer { margin-top: 0.9rem; }
+@media (max-width: 520px) { .admin-card { grid-template-columns: minmax(0, 1fr); } }
+
 /* ── Editor page ── */
 .create-page-container { max-width: 1160px; margin: 0 auto; padding: 0 var(--gutter); }
 .create-form-section {

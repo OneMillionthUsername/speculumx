@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 40">
+<!-- Ornament divider "Sterne" (asterism, three asterisks). Used as a CSS mask (content.css). -->
+<path fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" d="M24.0 2.5L24.0 17.5M17.5 6.2L30.5 13.8M17.5 13.7L30.5 6.3M12.0 22.5L12.0 37.5M5.5 26.2L18.5 33.8M5.5 33.8L18.5 26.3M36.0 22.5L36.0 37.5M29.5 26.2L42.5 33.8M29.5 33.8L42.5 26.3"/>
+</svg>

@@ -14,30 +14,35 @@
                 <% if (typeof cards !== 'undefined' && Array.isArray(cards) && cards.length > 0) { %>
                     <div id="cards-admin-list">
                         <% cards.forEach(function(card) { %>
-                            <article class="blog-post-card">
-                                <div class="post-meta">
-                                    <span class="post-date"><%= card.published ? 'Veröffentlicht' : 'Nicht veröffentlicht' %></span>
+                            <%
+                                // Local images have the -344 variant that the home page uses; external ones are shown as they are.
+                                // Either way the frame has a fixed size and the image is cropped to fill it (CSS: .admin-card-thumb).
+                                const __thumb = card.img_link && !card.img_link.startsWith('http')
+                                    ? card.img_link.replace(/\.[^./]+$/, '') + '-344.webp'
+                                    : card.img_link;
+                                let __host = card.link;
+                                try { __host = new URL(card.link).hostname.replace(/^www\./, ''); } catch (_e) { /* keep the raw link */ }
+                            %>
+                            <article class="blog-post-card admin-card">
+                                <div class="admin-card-thumb">
+                                    <% if (__thumb) { %>
+                                        <img src="<%= __thumb %>" alt="" width="172" height="155" loading="lazy" decoding="async">
+                                    <% } else { %>
+                                        <span class="admin-card-thumb-empty">Kein Bild</span>
+                                    <% } %>
                                 </div>
-                                <%
-                                    // Local images have the -344 variant that the home page uses; external ones are shown as they are
-                                    const __thumb = card.img_link && !card.img_link.startsWith('http')
-                                        ? card.img_link.replace(/\.[^./]+$/, '') + '-344.webp'
-                                        : card.img_link;
-                                    let __host = card.link;
-                                    try { __host = new URL(card.link).hostname.replace(/^www\./, ''); } catch (_e) { /* keep the raw link */ }
-                                %>
-                                <h2 class="post-title">
-                                    <span class="post-link"><%= card.title %></span>
-                                </h2>
-                                <% if (__thumb) { %>
-                                    <img src="<%= __thumb %>" alt="" width="172" height="155" loading="lazy" decoding="async" class="img-thumbnail mb-2">
-                                <% } %>
-                                <% if (card.subtitle) { %>
-                                    <p class="text-muted"><%= card.subtitle %></p>
-                                <% } %>
-                                <p class="text-muted"><a href="<%= card.link %>" target="_blank" rel="noopener noreferrer"><%= __host %></a></p>
-                                <div class="post-footer">
-                                    <a href="/cards/<%= card.id %>/edit" class="btn btn-sm btn-outline-warning">Bearbeiten</a>
+                                <div class="admin-card-body">
+                                    <div class="post-meta">
+                                        <span class="post-date"><%= card.published ? 'Veröffentlicht' : 'Nicht veröffentlicht' %></span>
+                                    </div>
+                                    <h2 class="post-title"><%= card.title %></h2>
+                                    <% if (card.subtitle) { %>
+                                        <p class="text-muted"><%= card.subtitle %></p>
+                                    <% } %>
+                                    <p class="text-muted"><a href="<%= card.link %>" target="_blank" rel="noopener noreferrer"><%= __host %></a></p>
+                                    <div class="post-footer">
+                                        <a href="/cards/<%= card.id %>/edit" class="btn btn-sm btn-outline-warning">Bearbeiten</a>
+                                    </div>
                                 </div>
                             </article>
                         <% }); %>

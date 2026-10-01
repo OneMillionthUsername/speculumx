@@ -26,6 +26,21 @@ function highlightPreviewCode(container) {
   Prism.highlightAllUnder(container);
 }
 
+const PREVIEW_LAYOUTS = ['standard', 'wide', 'magazine'];
+
+/**
+ * Mirror the layout chosen in the editor (select[name="layout"]) as post-layout-<value> on the preview section,
+ * so the preview shows what the layout adds (e.g. the initial and closing mark of the magazine layout).
+ * @param {HTMLElement} previewContentElement
+ */
+function applyPreviewLayout(previewContentElement) {
+  const section = previewContentElement.closest ? previewContentElement.closest('.form-preview') : null;
+  if (!section) return;
+  const select = document.querySelector('select[name="layout"]');
+  const layout = select && PREVIEW_LAYOUTS.includes(select.value) ? select.value : 'standard';
+  PREVIEW_LAYOUTS.forEach(l => section.classList.toggle(`post-layout-${l}`, l === layout));
+}
+
 /**
  * Update preview of blog post
  */
@@ -97,6 +112,7 @@ export function updatePreview() {
     }
 
     previewContentElement.innerHTML = previewHTML;
+    applyPreviewLayout(previewContentElement);
     highlightPreviewCode(previewContentElement);
   } else {
     console.warn('DOMPurify not available, showing plain text preview');
@@ -141,6 +157,16 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 
   // Listen for TinyMCE content changes to update preview
   document.addEventListener('tinymce:contentChanged', function() {
+    const previewBox = document.querySelector('.form-preview');
+    if (previewBox && previewBox.classList.contains('preview-visible')) {
+      updatePreview();
+    }
+  });
+
+  // A different layout changes the preview as well
+  document.addEventListener('change', function(event) {
+    const target = event.target;
+    if (!target || target.name !== 'layout') return;
     const previewBox = document.querySelector('.form-preview');
     if (previewBox && previewBox.classList.contains('preview-visible')) {
       updatePreview();

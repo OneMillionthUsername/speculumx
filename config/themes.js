@@ -19,13 +19,14 @@ const FONTS_RADICAL = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:it
 const FONTS_SOFT = 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=DM+Mono:wght@400;500&display=swap';
 
 export const THEMES = Object.freeze({
-  // The original dark theme (public/assets/css/main.css). Kept unchanged.
+  // The original dark theme (public/assets/css/main.css). Kept unchanged; content.css only adds the
+  // editor's design elements (side images, boxes, ornaments, …) in its look.
   radical: Object.freeze({
     id: 'radical',
     label: 'Radical',
     fontsUrl: FONTS_RADICAL,
     colorScheme: null, // unchanged look: no color-scheme meta, as before
-    stylesheets: Object.freeze(['/assets/css/main.css']),
+    stylesheets: Object.freeze(['/assets/css/main.css', '/assets/css/content.css']),
     scripts: Object.freeze([]),
     navbar: 'partials/navbar',
     prismStylesheet: '/assets/css/prism-okaidia.min.css',
@@ -46,6 +47,7 @@ export const THEMES = Object.freeze({
       '/assets/css/themes/soft/base.css',
       '/assets/css/themes/soft/components.css',
       '/assets/css/themes/soft/pages.css',
+      '/assets/css/themes/soft/content.css',
       '/assets/css/themes/soft/admin.css',
     ]),
     scripts: Object.freeze(['/assets/js/themes/soft/navigation.js']),

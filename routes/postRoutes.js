@@ -18,6 +18,7 @@ import express from 'express';
 import postController, { getAllPostsPaginated, getPostsByCategoryPaginated, getPostsByTagPaginated, getArchivedPostsPaginated, PAGE_SIZE } from '../controllers/postController.js';
 import commentsController from '../controllers/commentController.js';
 import { PostControllerException } from '../models/customExceptions.js';
+import { normalizePostLayout } from '../models/postModel.js';
 import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, applySsrNoCache } from '../utils/utils.js';
 import { getSafeRefererPath } from '../utils/requestUtils.js';
 import simpleCache from '../utils/simpleCache.js';
@@ -27,7 +28,7 @@ import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
-import { withExcerpts } from '../public/assets/js/shared/text.js';
+import { withExcerpts, detectLanguage } from '../public/assets/js/shared/text.js';
 
 const postRouter = express.Router();
 
@@ -86,7 +87,9 @@ async function buildReadPostViewData(req, res, post) {
   const stripHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const pageTitle = post && post.title ? `${post.title} – Sub specie aeternitatis` : undefined;
   const metaDescription = post ? stripHtml(post.description || post.content).slice(0, 160) || undefined : undefined;
-  return { isAdmin, comments, csrfToken, commentCount: comments.length, commentStatus, commentMessage, usePrism: true, pageTitle, metaDescription };
+  // Hyphenation follows the language of the text (lang attribute), English posts get English rules
+  const contentLang = post ? detectLanguage(post.content) : 'de';
+  return { isAdmin, comments, csrfToken, commentCount: comments.length, commentStatus, commentMessage, usePrism: true, pageTitle, metaDescription, contentLang };
 }
 
 // commentsRouter.all();
@@ -471,7 +474,8 @@ postRouter.post('/create',
     const tags = parseTags(req.body && req.body.tags);
     const slug = createSlug(title);
     try {
-      const result = await postController.createPost({ title, slug, content, tags, author: req.user.full_name, category_id: req.body.category_id });
+      const layout = normalizePostLayout(req.body && req.body.layout);
+      const result = await postController.createPost({ title, slug, content, tags, author: req.user.full_name, category_id: req.body.category_id, layout });
       if (!result) {
         return res.redirect(303, '/createPost?error=1');
       }
@@ -497,8 +501,10 @@ postRouter.post('/update/:postId',
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
     const category_id = source.category_id ? Number(source.category_id) : 7;
     const published = source.published === 'on' || source.published === 'true' || source.published === true;
+    // A form without the layout field (e.g. an editor page loaded before the field existed) keeps the stored layout
+    const layoutField = Object.hasOwn(source, 'layout') ? { layout: normalizePostLayout(source.layout) } : {};
     try {
-      const result = await postController.updatePost({ id: postId, title, content, tags, updated_at, category_id, published });
+      const result = await postController.updatePost({ id: postId, title, content, tags, updated_at, category_id, published, ...layoutField });
       if (!result) {
         return res.redirect(303, `/blogpost/update/${postId}?error=1`);
       }

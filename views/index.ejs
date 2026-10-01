@@ -15,8 +15,8 @@
         <% } %>
         <div class="lead-post-body">
             <p class="lead-post-label">Aktuell</p>
-            <h2 class="lead-post-title"><a class="lead-post-link" href="/blogpost/<%= leadPost.slug %>"><%= leadPost.title %></a></h2>
-            <% if (leadPost.excerpt) { %><p class="lead-post-excerpt"><%= leadPost.excerpt %></p><% } %>
+            <h2 class="lead-post-title"<% if (leadPost.lang && leadPost.lang !== 'de') { %> lang="<%= leadPost.lang %>"<% } %>><a class="lead-post-link" href="/blogpost/<%= leadPost.slug %>"><%= leadPost.title %></a></h2>
+            <% if (leadPost.excerpt) { %><p class="lead-post-excerpt"<% if (leadPost.lang && leadPost.lang !== 'de') { %> lang="<%= leadPost.lang %>"<% } %>><%= leadPost.excerpt %></p><% } %>
             <p class="lead-post-meta">
                 <% if (leadPost.created_at) { %><time datetime="<%= new Date(leadPost.created_at).toISOString() %>"><%= new Date(leadPost.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }) %></time><span class="lead-post-sep" aria-hidden="true">·</span><% } %>
                 <span class="lead-post-cta">Weiterlesen <span aria-hidden="true">→</span></span>
@@ -37,8 +37,8 @@
         <div class="featured-posts-grid">
             <% __more.forEach(function(fp) { %>
                 <article class="featured-post-card">
-                    <h3 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h3>
-                    <p class="featured-post-excerpt"><%= fp.excerpt %></p>
+                    <h3 class="featured-post-title"<% if (fp.lang && fp.lang !== 'de') { %> lang="<%= fp.lang %>"<% } %>><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h3>
+                    <p class="featured-post-excerpt"<% if (fp.lang && fp.lang !== 'de') { %> lang="<%= fp.lang %>"<% } %>><%= fp.excerpt %></p>
                 </article>
             <% }); %>
         </div>
@@ -65,8 +65,8 @@
             <% if (typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts) && featuredPosts.length > 0) { %>
                 <% featuredPosts.forEach(function(fp) { %>
                     <article class="featured-post-card">
-                        <h4 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
-                        <p class="featured-post-excerpt"><%= fp.excerpt %></p>
+                        <h4 class="featured-post-title"<% if (fp.lang && fp.lang !== 'de') { %> lang="<%= fp.lang %>"<% } %>><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
+                        <p class="featured-post-excerpt"<% if (fp.lang && fp.lang !== 'de') { %> lang="<%= fp.lang %>"<% } %>><%= fp.excerpt %></p>
                         <!-- <div class="featured-post-actions">
                             <% if (fp.previewImage && fp.previewImage.src) { %>
                                 <img class="featured-post-preview" src="<%= fp.previewImage.src %>"<% if (fp.previewImage.srcset) { %> srcset="<%= fp.previewImage.srcset %>"<% } %> alt="" loading="lazy" decoding="async" width="72" height="72">

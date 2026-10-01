@@ -39,6 +39,20 @@ Ungültige Werte fallen auf den Standard zurück und werden beim Start im Log ge
 - **Neues Theme:** CSS unter `public/assets/css/themes/<id>/` anlegen, Eintrag in `THEMES` ergänzen, Navbar-Partial bei Bedarf eigenständig (`views/partials/navbar<Name>.ejs`).
 - **CSP:** Theme-Skripte liegen als externe Dateien unter `/assets/js/…` (keine Inline-Handler, Inline-Skripte nur mit Nonce).
 
+## Gestaltung von Beiträgen
+
+- **Layout pro Beitrag** (Editor, Auswahl „Layout“): *Klassisch* (ruhige Lesespalte), *Breit* (breitere Seite und Textspalte) oder *Magazin* (breite Seite um eine klassische Spalte; umflossene Bilder, Zitate und Randnotizen ragen in den Rand, der erste Absatz beginnt mit Initiale und Kapitälchen, am Ende steht ein Schlusszeichen). Gespeichert in `posts.layout`; die Spalte legt die App beim Start selbst an (`ALTER TABLE … ADD COLUMN IF NOT EXISTS`), eine Migration ist nicht nötig. Fehlt sie, erscheinen alle Beiträge im klassischen Layout.
+- **Menü „Gestaltung“** in der Werkzeugleiste des Editors:
+  - *Absatz*: Einleitung, Initiale, Kapitälchen-Auftakt, Schlusszeichen
+  - *Kasten*: Hinweis, Kernsatz, Randnotiz, Zwei Spalten, Exkurs (aufklappbar; im Beitrag zunächst zugeklappt)
+  - *Zitat*: herausgestelltes Zitat (mittig oder rechts mit umfließendem Text), Motto mit Quelle
+  - *Bild*: links oder rechts mit umfließendem Text, mittig, breit (über die Textspalte hinaus), Größe klein/normal/groß
+  - *Trenner*: Ranke, Blätter, Sterne, Rauten; dazu der Textmarker
+- **Bilder**: Ein Klick auf ein Bild zeigt eine kleine Leiste (links/mittig/rechts, S/M/L, Breit). Bildunterschriften über den Bild-Dialog („Bildunterschrift anzeigen“). Auf schmalen Bildschirmen stehen umflossene Bilder und Randnotizen als eigene Zeile.
+- **Ausrichtung** (auch Blocksatz) wird als Klasse gespeichert; die früheren Inline-Styles gingen beim Speichern verloren.
+- **Silbentrennung**: Fließtext, Anrisse und Kommentare trennt der Browser automatisch (`hyphens: auto`, nur Wörter ab sechs Buchstaben), Überschriften nur auf schmalen Bildschirmen. Englische Beiträge werden erkannt und mit `lang="en"` ausgezeichnet, damit die englischen Trennregeln gelten.
+- **Technik**: Alles ist klassenbasiert, weil der Server `style`-Attribute entfernt. Stile in `public/assets/css/themes/soft/content.css` (auch im Editor geladen) und `public/assets/css/content.css` (Theme `radical`), Editor-Logik in `public/assets/js/tinymce/modules/design.js`, Ornamente in `public/assets/ornaments/`.
+
 ## Suche
 
 - `GET /search?q=…` durchsucht veröffentlichte Posts nach Titel, Inhalt und Tags (alle Wörter müssen vorkommen; Groß-/Kleinschreibung und Akzente werden ignoriert), sortiert nach Relevanz (Titel vor Tags vor Inhalt), paginiert und mit hervorgehobenen Treffern.
@@ -49,6 +63,7 @@ Ungültige Werte fallen auf den Standard zurück und werden beim Start im Log ge
 
 `scripts/weekly-cards.mjs` sammelt einmal pro Woche die wichtigsten Meldungen (Hacker News ab 150 Punkten plus RSS/Atom-Feeds aus `config/cardDigest.js`), lässt ein LLM die zu den Blog-Themen passenden auswählen und legt sie als **unveröffentlichte** Cards an. Freigegeben wird unter `/cards/manage`.
 
+- Übersicht: `/cards/manage` zeigt jedes Bild im gleichen festen Rahmen (172 × 155 px, zugeschnitten), unabhängig vom Seitenverhältnis der Quelle.
 - Aufräumen: Automatisch erzeugte Cards, die nach 30 Tagen (`CARD_DIGEST_DRAFT_TTL_DAYS`) noch unveröffentlicht sind, werden samt Bilddateien gelöscht. Veröffentlichte und von Hand angelegte Cards bleiben immer erhalten.
 - Bild: ein Bild mit maschinenlesbar belegter freier Lizenz (CC0/Public Domain, lokal gespeichert), sonst eine KI-Illustration, sonst das Standardbild `public/assets/img/card-default.webp`.
 - Aufruf: `node scripts/weekly-cards.mjs [--dry-run | --check-sources | --test-image] [--limit n] [--days n]`; in Entwicklung auch als `npm run cards:weekly:dry`, `cards:check-sources`, `cards:test-image`.
