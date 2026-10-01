@@ -62,6 +62,9 @@ export const SMTP_TLS_REJECT_UNAUTHORIZED = parseBoolean(
 );
 export const SMTP_USER = process.env.SMTP_USER || '';
 export const SMTP_PASS = process.env.SMTP_PASS || '';
+// Name the SMTP client announces in EHLO/HELO. Without it nodemailer falls back to the container
+// hostname, which is no FQDN; the spam filter then scores the HELO as bad. Default: the MX name.
+export const SMTP_CLIENT_NAME = process.env.SMTP_CLIENT_NAME || `mail.${DOMAIN}`;
 export const CONTACT_FORM_TO = process.env.CONTACT_FORM_TO || '';
 export const CONTACT_FORM_FROM = process.env.CONTACT_FORM_FROM || `no-reply@${DOMAIN}`;
 export const CONTACT_FORM_SUBJECT_PREFIX = process.env.CONTACT_FORM_SUBJECT_PREFIX || '[Blog Kontakt]';

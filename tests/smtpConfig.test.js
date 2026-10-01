@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
 
-const SMTP_KEYS = ['SMTP_HOST', 'SMTP_TLS_REJECT_UNAUTHORIZED'];
+const SMTP_KEYS = ['SMTP_HOST', 'SMTP_TLS_REJECT_UNAUTHORIZED', 'SMTP_CLIENT_NAME', 'DOMAIN'];
 const saved = Object.fromEntries(SMTP_KEYS.map(key => [key, process.env[key]]));
 
 // config.js reads process.env once at import, so every case needs a fresh module
@@ -52,5 +52,29 @@ describe('SMTP_TLS_REJECT_UNAUTHORIZED', () => {
   it('keeps verification on for a remote host when the env value is not a boolean', async () => {
     const config = await loadConfig({ SMTP_HOST: '192.0.2.10', SMTP_TLS_REJECT_UNAUTHORIZED: 'ture' });
     expect(config.SMTP_TLS_REJECT_UNAUTHORIZED).toBe(true);
+  });
+});
+
+describe('SMTP_CLIENT_NAME', () => {
+  afterEach(() => {
+    for (const key of SMTP_KEYS) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  });
+
+  it('defaults to mail.<DOMAIN>, the MX name of the server', async () => {
+    const config = await loadConfig({ DOMAIN: 'speculumx.at' });
+    expect(config.SMTP_CLIENT_NAME).toBe('mail.speculumx.at');
+  });
+
+  it('lets the env variable override the default', async () => {
+    const config = await loadConfig({ DOMAIN: 'speculumx.at', SMTP_CLIENT_NAME: 'smtp.example.org' });
+    expect(config.SMTP_CLIENT_NAME).toBe('smtp.example.org');
+  });
+
+  it('falls back to the default when the env variable is empty', async () => {
+    const config = await loadConfig({ DOMAIN: 'speculumx.at', SMTP_CLIENT_NAME: '' });
+    expect(config.SMTP_CLIENT_NAME).toBe('mail.speculumx.at');
   });
 });
