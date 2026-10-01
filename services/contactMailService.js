@@ -7,6 +7,7 @@ import {
   CONTACT_FORM_FROM,
   CONTACT_FORM_SUBJECT_PREFIX,
   CONTACT_FORM_TO,
+  SMTP_CLIENT_NAME,
   SMTP_HOST,
   SMTP_PASS,
   SMTP_PORT,
@@ -14,6 +15,10 @@ import {
   SMTP_TLS_REJECT_UNAUTHORIZED,
   SMTP_USER,
 } from '../config/config.js';
+
+// Display name of the contact form mail. The spam filter exempts web contact forms only when
+// From equals To, so the form mail is sent from the recipient address; the visitor is in Reply-To.
+const CONTACT_FROM_DISPLAY_NAME = 'Blog Kontakt';
 
 let cachedTransporter = null;
 
@@ -28,6 +33,10 @@ function getTransporter() {
       rejectUnauthorized: SMTP_TLS_REJECT_UNAUTHORIZED,
     },
   };
+
+  if (SMTP_CLIENT_NAME) {
+    transportOptions.name = SMTP_CLIENT_NAME;
+  }
 
   if (SMTP_USER && SMTP_PASS) {
     transportOptions.auth = {
@@ -112,7 +121,7 @@ async function sendContactMail({ name, email, message, ip, userAgent }) {
   }
 
   const info = await transporter.sendMail({
-    from: CONTACT_FORM_FROM,
+    from: { name: CONTACT_FROM_DISPLAY_NAME, address: to },
     to,
     replyTo: safeReplyTo,
     subject: buildSubject(name),
