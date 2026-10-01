@@ -17,6 +17,13 @@ import { getSafeRefererPath } from '../utils/requestUtils.js';
  */
 const cardRouter = express.Router();
 
+// A card image is an external URL or a local path (the digest stores generated and re-hosted
+// images under /assets/media/cards, the fallback under /assets/img). "//host" is not a local path.
+const imgLinkSchema = Joi.alternatives().try(
+  Joi.string().uri({ scheme: ['http', 'https'] }),
+  Joi.string().pattern(/^\/[^/\0][^\0]*$/),
+);
+
 // GET /cards/manage - Alle Cards verwalten (Admin only)
 cardRouter.get('/manage',
   strictLimiter,
@@ -62,7 +69,7 @@ cardRouter.post('/create',
       title: Joi.string().min(1).max(255).required(),
       subtitle: Joi.string().max(500).allow('', null),
       link: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
-      img_link: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
+      img_link: imgLinkSchema.required(),
       published: Joi.any().optional(),
     }).options({ allowUnknown: true }), // allowUnknown, da wir evtl. zusätzliche Felder wie _csrf haben
   }),
@@ -119,7 +126,7 @@ cardRouter.post('/:id/update',
       title: Joi.string().min(1).max(255).required(),
       subtitle: Joi.string().max(500).allow('', null),
       link: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
-      img_link: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
+      img_link: imgLinkSchema.required(),
       published: Joi.boolean().truthy('on').optional(),
     }).options({ allowUnknown: true }),
   }),

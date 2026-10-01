@@ -18,12 +18,24 @@
                                 <div class="post-meta">
                                     <span class="post-date"><%= card.published ? 'Veröffentlicht' : 'Nicht veröffentlicht' %></span>
                                 </div>
+                                <%
+                                    // Local images have the -344 variant that the home page uses; external ones are shown as they are
+                                    const __thumb = card.img_link && !card.img_link.startsWith('http')
+                                        ? card.img_link.replace(/\.[^./]+$/, '') + '-344.webp'
+                                        : card.img_link;
+                                    let __host = card.link;
+                                    try { __host = new URL(card.link).hostname.replace(/^www\./, ''); } catch (_e) { /* keep the raw link */ }
+                                %>
                                 <h2 class="post-title">
                                     <span class="post-link"><%= card.title %></span>
                                 </h2>
+                                <% if (__thumb) { %>
+                                    <img src="<%= __thumb %>" alt="" width="172" height="155" loading="lazy" decoding="async" class="img-thumbnail mb-2">
+                                <% } %>
                                 <% if (card.subtitle) { %>
                                     <p class="text-muted"><%= card.subtitle %></p>
                                 <% } %>
+                                <p class="text-muted"><a href="<%= card.link %>" target="_blank" rel="noopener noreferrer"><%= __host %></a></p>
                                 <div class="post-footer">
                                     <a href="/cards/<%= card.id %>/edit" class="btn btn-sm btn-outline-warning">Bearbeiten</a>
                                 </div>

@@ -4,6 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 import { ANTHROPIC_API_KEY, GEMINI_API_KEY } from '../config/config.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
+import { DEFAULT_GEMINI_MODEL, FALLBACK_GEMINI_MODELS } from '../config/aiModels.js';
 
 /**
  * AI helper routes (protected admin-only endpoints).
@@ -29,10 +30,6 @@ if (ANTHROPIC_API_KEY) {
 const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 const CLAUDE_MODELS = ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'];
-// All free-tier models. Each has its own daily quota, so the chain multiplies
-// the free requests per day; Flash-Lite comes last (weaker, but ~500 requests/day).
-const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
-const FALLBACK_GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
 
 function isAvailabilityError(err) {
   const msg = String(err?.message || err?.status || '').toLowerCase();

@@ -292,12 +292,23 @@ export async function initializeDatabaseSchema() {
             link VARCHAR(1000) NOT NULL,
             img_link VARCHAR(1000) NOT NULL,
             published BOOLEAN DEFAULT 1,
+            auto_generated BOOLEAN NOT NULL DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
             INDEX idx_cards_created_at (created_at DESC),
             INDEX idx_cards_published (published)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    // Marks drafts created by the weekly digest (scripts/weekly-cards.mjs); the ones that are
+    // still unpublished after a while are deleted. CREATE TABLE above does not touch existing
+    // tables, so databases from before this column get it here.
+    // A failure here must not keep the whole site from starting: only the card digest and the
+    // admin card forms depend on the column.
+    try {
+      await conn.query('ALTER TABLE cards ADD COLUMN IF NOT EXISTS auto_generated BOOLEAN NOT NULL DEFAULT 0 AFTER published');
+    } catch (error) {
+      logger.error(`Could not add cards.auto_generated: ${error.message}`);
+    }
 
     // Analytics/Views-Tabelle
     // await conn.query(`
@@ -1294,17 +1305,18 @@ export const DatabaseService = {
         // Ensure boolean maps correctly for MariaDB tinyint(1)/boolean
         // Default to 1 (true) if not explicitly provided to match schema default
         published: typeof cardData.published === 'boolean' ? (cardData.published ? 1 : 0) : 1,
+        auto_generated: cardData.auto_generated === true ? 1 : 0,
       };
       const result = await conn.query(
-        'INSERT INTO cards (title, subtitle, link, img_link, published) VALUES (?, ?, ?, ?, ?)',
-        [insertData.title, insertData.subtitle, insertData.link, insertData.img_link, insertData.published],
+        'INSERT INTO cards (title, subtitle, link, img_link, published, auto_generated) VALUES (?, ?, ?, ?, ?, ?)',
+        [insertData.title, insertData.subtitle, insertData.link, insertData.img_link, insertData.published, insertData.auto_generated],
       );
       if (result.affectedRows === 0) {
         throw new Error('No rows affected');
       }
       return {
         success: true,
-        card: { id: Number(result.insertId), ...insertData, published: Boolean(insertData.published) },
+        card: { id: Number(result.insertId), ...insertData, published: Boolean(insertData.published), auto_generated: Boolean(insertData.auto_generated) },
       };
     } catch (error) {
       logger.error(`Error in createCard: ${error.message}`);
@@ -1432,9 +1444,11 @@ export const DatabaseService = {
       }
       conn = await getDatabasePool().getConnection();
       const published = typeof cardData.published === 'boolean' ? (cardData.published ? 1 : 0) : 1;
+      // A card that gets published is no longer an auto-generated draft, so hiding it again later
+      // never makes it a candidate for the automatic deletion of old drafts
       const result = await conn.query(
-        'UPDATE cards SET title = ?, subtitle = ?, link = ?, img_link = ?, published = ? WHERE id = ?',
-        [cardData.title, cardData.subtitle ?? null, cardData.link, cardData.img_link, published, cardId],
+        'UPDATE cards SET title = ?, subtitle = ?, link = ?, img_link = ?, published = ?, auto_generated = IF(? = 1, 0, auto_generated) WHERE id = ?',
+        [cardData.title, cardData.subtitle ?? null, cardData.link, cardData.img_link, published, published, cardId],
       );
       if (result.affectedRows === 0) {
         throw new databaseError('No rows affected');
@@ -1443,6 +1457,55 @@ export const DatabaseService = {
     } catch (error) {
       logger.error(`Error in updateCard: ${error.message}`);
       throw new databaseError(`Error in updateCard: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  /**
+   * Unpublished cards created by the weekly digest that are older than `days` days.
+   * @param {number} days - Retention time of unpublished auto-generated cards (>= 1).
+   * @returns {Promise<Array<{id: number, title: string, img_link: string, created_at: Date}>>}
+   */
+  async getExpiredAutoCards(days) {
+    let conn;
+    try {
+      if (!Number.isInteger(days) || days < 1) {
+        throw new databaseError('days must be a positive integer');
+      }
+      conn = await getDatabasePool().getConnection();
+      const rows = await conn.query(
+        'SELECT id, title, img_link, created_at FROM cards WHERE auto_generated = 1 AND published = 0 AND created_at < DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY id',
+        [days],
+      );
+      return (rows || []).map(row => ({ ...convertBigInts(row) }));
+    } catch (error) {
+      logger.error(`Error in getExpiredAutoCards: ${error.message}`);
+      throw new databaseError(`Error in getExpiredAutoCards: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  /**
+   * Deletes one auto-generated draft. The conditions are repeated in the DELETE, so a card that
+   * was published after it had been selected is left alone.
+   * @param {number} cardId
+   * @returns {Promise<boolean>} True if the card was deleted.
+   */
+  async deleteExpiredAutoCard(cardId) {
+    let conn;
+    try {
+      if (!Number.isInteger(cardId) || cardId <= 0) {
+        throw new databaseError('ID is invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'DELETE FROM cards WHERE id = ? AND auto_generated = 1 AND published = 0',
+        [cardId],
+      );
+      return result.affectedRows > 0;
+    } catch (error) {
+      logger.error(`Error in deleteExpiredAutoCard: ${error.message}`);
+      throw new databaseError(`Error in deleteExpiredAutoCard: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
