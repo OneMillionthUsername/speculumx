@@ -3234,6 +3234,7 @@ a.tag:hover {
 }
 
 #contact-message {
+    min-height: 6rem;
     max-height: 200px;
     resize: vertical;
 }
