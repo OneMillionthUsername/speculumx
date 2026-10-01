@@ -3,75 +3,62 @@
     metaDescription = 'Tech, Programming, Philosophy, Science, News and more';
 %>
 
+<% const __soft = typeof theme !== 'undefined' && theme && theme.id === 'soft'; %>
+<% if (__soft) { %>
+<div class="header-section header-section--soft">
+    <%- include('partials/homeHero') %>
+
+    <% if (typeof leadPost !== 'undefined' && leadPost) { %>
+    <article class="lead-post<%= leadPost.previewImage && leadPost.previewImage.src ? ' lead-post--image' : '' %>">
+        <% if (leadPost.previewImage && leadPost.previewImage.src) { %>
+        <img class="lead-post-image" src="<%= leadPost.previewImage.src %>"<% if (leadPost.previewImage.srcset) { %> srcset="<%= leadPost.previewImage.srcset %>" sizes="(max-width: 860px) 100vw, 480px"<% } %> alt="" loading="lazy" decoding="async">
+        <% } %>
+        <div class="lead-post-body">
+            <p class="lead-post-label">Aktuell</p>
+            <h2 class="lead-post-title"><a class="lead-post-link" href="/blogpost/<%= leadPost.slug %>"><%= leadPost.title %></a></h2>
+            <% if (leadPost.excerpt) { %><p class="lead-post-excerpt"><%= leadPost.excerpt %></p><% } %>
+            <p class="lead-post-meta">
+                <% if (leadPost.created_at) { %><time datetime="<%= new Date(leadPost.created_at).toISOString() %>"><%= new Date(leadPost.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }) %></time><span class="lead-post-sep" aria-hidden="true">·</span><% } %>
+                <span class="lead-post-cta">Weiterlesen <span aria-hidden="true">→</span></span>
+            </p>
+        </div>
+    </article>
+    <% } %>
+
+    <%
+        // Everything above is already shown: the next two posts follow the lead, and the
+        // sidebar's "Beliebte Beiträge" only lists posts that are not on this screen yet.
+        const __more = (typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts)) ? featuredPosts.slice(1) : [];
+        const __shown = new Set((typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts) ? featuredPosts : []).map(function(fp) { return fp.slug; }));
+        const __popular = (typeof popularPosts !== 'undefined' && Array.isArray(popularPosts) ? popularPosts : []).filter(function(p) { return !__shown.has(p.slug); });
+    %>
+    <% if (__more.length > 0) { %>
+    <div class="content-area">
+        <div class="featured-posts-grid">
+            <% __more.forEach(function(fp) { %>
+                <article class="featured-post-card">
+                    <h3 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h3>
+                    <p class="featured-post-excerpt"><%= fp.excerpt %></p>
+                </article>
+            <% }); %>
+        </div>
+    </div>
+    <% } %>
+
+    <aside class="sidebar" aria-label="Themen und Archiv">
+        <%- include('partials/homeCategories') %>
+        <%- include('partials/homeArchive') %>
+        <%- include('partials/homePopular', { items: __popular, hideWhenEmpty: true }) %>
+    </aside>
+</div>
+<% } else { %>
 <div class="header-section">
     <aside class="sidebar">
-        <h2 class="sidebar-title">Beliebte Beiträge</h2>
-        <ul class="nav-list" id="popular-posts">
-            <% if (typeof popularPosts !== 'undefined' && Array.isArray(popularPosts) && popularPosts.length > 0) { %>
-                <% popularPosts.forEach(function(p) { %>
-                    <li>
-                        <% if (p.slug) { %>
-                            <a href="/blogpost/<%= p.slug %>"><%= p.title %></a>
-                        <% } else if (p.id !== undefined && p.id !== null) { %>
-                            <a href="/blogpost/id/<%= p.id %>"><%= p.title %></a>
-                        <% } else { %>
-                            <span><%= p.title %></span>
-                        <% } %>
-                    </li>
-                <% }); %>
-            <% } else { %>
-                <li class="text-muted small">Keine Daten</li>
-            <% } %>
-        </ul>
-
-        <h2 class="sidebar-title">Kategorien</h2>
-        <!-- <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-collapse="#categoriesCollapse" aria-controls="categoriesCollapse" aria-expanded="false">
-            Kategorien
-        </button> -->
-        <!-- <div class="collapse mt-2" id="categoriesCollapse"> -->
-        <div>
-            <ul class="list-group">
-                <% categories.forEach(function(category) { %>
-                    <li class="list-group-item">
-                        <a href="/blogpost/category/<%= category.slug %>"><%= category.name %>&nbsp;</a>
-                    </li>
-                <% }); %>
-            </ul>
-        </div>
-
-        <h2 class="sidebar-title">Archiv</h2>
-        <!-- <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-collapse="#archiveCollapse" aria-controls="archiveCollapse" aria-expanded="false">
-            Jahr wählen
-        </button> -->
-        <!-- <div class="collapse mt-2" id="archiveCollapse"> -->
-        <div>
-            <ul class="list-group">
-                <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
-                    <% archiveYears.forEach(function(y) { %>
-                        <li class="list-group-item">
-                            <a href="/blogpost/archive?<%= 'year=' + y %>"><%= y %>&nbsp;</a>
-                        </li>
-                    <% }); %>
-                <% } else { %>
-                    <li class="list-group-item">
-                        <span class="dropdown-item text-muted">Keine Jahre</span>
-                    </li>
-                <% } %>
-            </ul>
-        </div>
+        <%- include('partials/homePopular', { items: typeof popularPosts !== 'undefined' ? popularPosts : [], hideWhenEmpty: false }) %>
+        <%- include('partials/homeCategories') %>
+        <%- include('partials/homeArchive') %>
     </aside>
-    <div class="hero-glass-content">
-        <div class="d-flex justify-content-center align-items-center mb-2">
-            <img src="/assets/ornaments/1131824.svg" alt="Ornament" class="ornament ornament-flip-y mr-3">
-            <h1 class="mt-5 main-title mb-0">Ratio et Realitas</h1>
-            <img src="/assets/ornaments/1131824.svg" alt="Ornament" class="ornament">
-        </div>
-        <div class="hero-diff-band">
-            <h2 class="sub-title">In statu nascendi</h2>
-        </div>
-        <p class="mt-3 description">Ein Blog über Philosophie und alles was mich sonst so interessiert</p>
-        <hr class="header-divider">
-    </div>
+    <%- include('partials/homeHero') %>
     <div class="content-area">
         <!-- <h3 class="featured-title">Ausgewählte Beiträge</h3> -->
         <div class="featured-posts-grid">
@@ -116,6 +103,8 @@
 </div>
 
 
+<% } %>
+
 <section class="container my-5">
     <!-- <h3 class="featured-title">Fundstücke & Empfehlungen</h3> -->
     <div class="row" id="discoveries-grid">
@@ -150,7 +139,8 @@
                         </div>
                         <% } %>
                         <div class="card-body">
-                            <h5 class="card-title"><%= card.title %></h5>
+                            <% const __cardHeading = __soft ? 'h3' : 'h5'; %>
+                            <<%= __cardHeading %> class="card-title"><%= card.title %></<%= __cardHeading %>>
                             <% if (card.subtitle) { %>
                                 <p class="card-text"><%= card.subtitle %></p>
                             <% } %>

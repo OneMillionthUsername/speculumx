@@ -70,8 +70,12 @@ function pairs(v) {
     );
   }
   for (const name of ['tone-1', 'tone-2', 'tone-3', 'tone-4']) {
-    const card = blend(v[name], surface, 0.24); // tinted cards
-    out.push([`text on ${name} card`, v.text, card, 7], [`dim on ${name} card`, v['text-dim'], card, 4.5]);
+    const card = blend(v[name], surface, 0.26); // tinted cards and panels
+    out.push(
+      [`text on ${name} card`, v.text, card, 7],
+      [`dim on ${name} card`, v['text-dim'], card, 4.5],
+      [`faint on ${name} card`, v['text-faint'], card, 4.5],
+    );
   }
   return out;
 }

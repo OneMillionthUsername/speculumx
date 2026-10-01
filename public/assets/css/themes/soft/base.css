@@ -122,7 +122,7 @@ body::after {
 :root { --halo: 0 0 14px color-mix(in srgb, var(--bd-base) 92%, transparent), 0 0 4px color-mix(in srgb, var(--bd-base) 85%, transparent); }
 
 .posts-header > label,
-.content-area > :is(h1, h2),
+.content-area > :is(h1, h2):not(.sr-only),
 .content-area > p.text-muted,
 .content-area > section > h2,
 .content-area > section > p.text-muted,
@@ -139,7 +139,7 @@ body::after {
     box-shadow: var(--shadow-1);
 }
 .posts-header > label { margin-bottom: 0.7rem; padding-block: 0.3rem; border-radius: var(--r-pill); }
-.content-area > :is(h1, h2) { margin-bottom: 1rem; }
+.content-area > :is(h1, h2):not(.sr-only) { margin-bottom: 1rem; }
 
 /* Single words and icons that are left over: a quiet halo is enough */
 .tags-label,
@@ -196,7 +196,6 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
-    border-radius: var(--r-sm);
 }
 
 /* ── Accessibility helpers ── */
@@ -295,4 +294,4 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 .text-danger { color: var(--danger); }
 .ornament-flip-y { transform: scaleY(-1); }
 
-.text-muted.small, .small.text-muted { font-family: var(--font-ui); font-size: 0.78rem; }
+.text-muted.small, .small.text-muted { font-family: var(--font-ui); font-size: 0.875rem; }

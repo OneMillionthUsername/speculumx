@@ -7,6 +7,7 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="content-area">
+                <h1 class="sr-only"><%= (typeof activeTag !== 'undefined' && activeTag) ? 'Beiträge zum Tag ' + activeTag : 'Aktuelle Beiträge' %></h1>
                 <div class="posts-header">
                     <% if (typeof activeTag !== 'undefined' && activeTag) { %>
                         <div class="active-tag-banner mb-2">

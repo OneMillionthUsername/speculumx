@@ -9,6 +9,23 @@ import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
 import { getClientIp } from '../utils/requestUtils.js';
 import contactMailService from '../services/contactMailService.js';
 
+// stripHtmlToText leaves the blank that replaced a closing tag in front of punctuation ("Text .")
+const plainText = (html) => stripHtmlToText(html || '').replace(/\s+([.,;:!?…)])/g, '$1').replace(/\(\s+/g, '(');
+
+/**
+ * Plain-text teaser of at most `maxLen` characters that ends on a whole word (an ellipsis marks a cut).
+ * @param {string} html
+ * @param {number} maxLen
+ * @returns {string}
+ */
+export function excerptAtWordEnd(html, maxLen) {
+  const text = plainText(html);
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > maxLen * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()} …`;
+}
+
 async function showHomePage(req, res) {
   logger.debug(`[HOME] GET / requested from ${req.ip}, User-Agent: ${req.get('User-Agent')}`);
   logger.debug('[HOME] GET / - Rendering index.ejs');
@@ -34,6 +51,16 @@ async function showHomePage(req, res) {
         return { src: base + '-344.webp', srcset: base + '-344.webp 344w, ' + base + '-688.webp 688w' };
       })(),
     }));
+
+    // The newest post, shown larger as "Aktuell" by themes that have a lead card (soft)
+    const newest = (posts || [])[0];
+    const leadPost = newest ? {
+      title: decodeHtmlEntities(newest.title || ''),
+      slug: newest.slug,
+      excerpt: excerptAtWordEnd(newest.excerpt_source, 280),
+      created_at: newest.created_at,
+      previewImage: featuredPosts[0].previewImage,
+    } : null;
 
     const popularPosts = (posts || [])
       .slice()
@@ -79,7 +106,7 @@ async function showHomePage(req, res) {
 
     logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
     applySsrNoCache(res, { varyCookie: true });
-    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, cardsPagination, isAdmin, csrfToken, categories });
+    res.render('index', { featuredPosts, leadPost, popularPosts, archiveYears, cards, cardsPagination, isAdmin, csrfToken, categories });
     logger.debug('[HOME] GET / - Successfully rendered index.ejs');
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);
@@ -191,7 +218,7 @@ async function showSearchPage(req, res) {
       view.posts = posts.map(p => ({
         ...p,
         titleParts: splitHighlight(p.title || '', terms),
-        snippetParts: splitHighlight(buildSnippet(stripHtmlToText(p.content), terms), terms),
+        snippetParts: splitHighlight(buildSnippet(plainText(p.content), terms), terms),
       }));
       view.pagination = {
         currentPage: page,

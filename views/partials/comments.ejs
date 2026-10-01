@@ -1,12 +1,18 @@
 <!-- Comments partial: renders comment form and list for a post. Expects `post` to be defined -->
+<%
+    // Under the post's h1 the soft theme uses h2/h3; the original theme keeps its h3/h4 (its CSS is tag based)
+    const __soft = typeof theme !== 'undefined' && theme && theme.id === 'soft';
+    const __hTitle = __soft ? 'h2' : 'h3';
+    const __hSub = __soft ? 'h3' : 'h4';
+%>
 <section id="comments-section" class="comments-section">
     <div class="comments-divider">
         <hr>
     </div>
 
-    <h3 id="comments-title" class="comments-title">
+    <<%= __hTitle %> id="comments-title" class="comments-title">
         💬 Kommentare <span class="badge badge-secondary" id="comment-count"><%= typeof commentCount !== 'undefined' ? commentCount : 0 %></span>
-    </h3>
+    </<%= __hTitle %>>
 
     <% if (typeof commentMessage !== 'undefined' && commentMessage) { %>
         <div class="alert <%= commentStatus === 'ok' ? 'alert-success' : 'alert-danger' %>">
@@ -15,7 +21,7 @@
     <% } %>
 
     <section class="comment-form-container" aria-label="Kommentar schreiben">
-        <h4 class="mb-3">Kommentar schreiben</h4>
+        <<%= __hSub %> class="mb-3">Kommentar schreiben</<%= __hSub %>>
         <form id="comment-form" class="comment-form" method="POST" action="/comments/<%= post.id %>">
             <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -63,7 +69,7 @@
     </section>
 
     <section class="comments-list-container" aria-label="Diskussion">
-        <h4 class="mb-3">💭 Diskussion</h4>
+        <<%= __hSub %> class="mb-3">💭 Diskussion</<%= __hSub %>>
         <div id="comments-list" class="comments-list">
             <% if (typeof comments !== 'undefined' && Array.isArray(comments) && comments.length > 0) { %>
                 <% comments.forEach(function(comment) { %>
