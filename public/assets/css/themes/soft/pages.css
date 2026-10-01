@@ -34,56 +34,83 @@
     }
 }
 
+/* Hero: the title floats free on the backdrop. No box; it is set apart by generous air and a soft
+   cloud of paper-coloured light behind the text, which keeps it legible on any photograph. */
 .hero-glass-content {
     position: relative;
-    overflow: hidden;
-    padding: clamp(2rem, 6vw, 4.2rem) clamp(1.4rem, 5vw, 3.5rem);
-    border: 1px solid var(--line);
-    border-radius: var(--r-xl);
+    isolation: isolate;
+    margin: clamp(0.5rem, 3vw, 2rem) 0 clamp(0.8rem, 2.5vw, 1.8rem);
+    padding: clamp(2.2rem, 5.5vw, 4rem) var(--gutter) clamp(2.2rem, 4.5vw, 3rem);
     text-align: center;
-    background:
-        radial-gradient(70% 90% at 12% 0%, color-mix(in srgb, var(--tone-1) 24%, transparent), transparent 70%),
-        radial-gradient(60% 80% at 100% 100%, color-mix(in srgb, var(--tone-4) 22%, transparent), transparent 70%),
-        radial-gradient(50% 70% at 90% 0%, color-mix(in srgb, var(--tone-2) 16%, transparent), transparent 70%),
-        var(--surface);
-    box-shadow: var(--shadow-2);
 }
-.hero-glass-content .d-flex { flex-wrap: wrap; gap: 0.6rem 1rem; }
+.hero-glass-content::before {
+    content: '';
+    position: absolute;
+    inset: -6% -3%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 36% 42% at 28% 34%, color-mix(in srgb, var(--bd-glow-2) 30%, transparent), transparent 100%),
+        radial-gradient(ellipse 50% 50% at 50% 50%,
+            color-mix(in srgb, var(--surface-solid) 94%, transparent) 0%,
+            color-mix(in srgb, var(--surface-solid) 80%, transparent) 46%,
+            color-mix(in srgb, var(--surface-solid) 36%, transparent) 74%,
+            transparent 100%);
+    filter: blur(6px);
+}
+.hero-glass-content .d-flex { flex-wrap: wrap; gap: 0.6rem clamp(0.8rem, 2vw, 1.6rem); margin-bottom: 0; }
 .hero-glass-content h1.mt-5 { margin-top: 0; }
 
 .main-title {
     margin: 0;
-    font-size: clamp(2.3rem, 7vw, 4.6rem);
+    font-size: clamp(2.6rem, 8.5vw, 5.4rem);
     font-weight: 400;
     font-style: italic;
     line-height: 1;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.028em;
     background: linear-gradient(120deg, var(--text) 30%, var(--accent-strong) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
+    text-wrap: balance;
 }
-.ornament { width: 34px; opacity: 0.55; filter: sepia(0.7) saturate(0.9); }
+.ornament { width: clamp(30px, 4vw, 44px); opacity: 0.6; filter: sepia(0.7) saturate(0.9); }
+@media (max-width: 576px) { .ornament { display: none; } } /* they would wrap away from the title */
 
-.hero-diff-band { display: flex; justify-content: center; margin-top: 1.4rem; }
+.hero-diff-band { display: flex; justify-content: center; margin-top: clamp(1.5rem, 3vw, 2.3rem); }
 .sub-title {
     margin: 0;
-    padding: 0.45rem 1.2rem;
-    border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    padding: 0.55rem 1.5rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
     border-radius: var(--r-pill);
-    background: color-mix(in srgb, var(--accent) 13%, transparent);
+    background: color-mix(in srgb, var(--accent) 13%, var(--surface-solid));
     color: var(--accent-strong);
     font-family: var(--font-ui);
     font-variation-settings: normal;
-    font-size: 0.72rem;
+    font-size: 0.76rem;
     font-weight: 400;
     font-style: normal;
-    letter-spacing: 0.3em;
+    letter-spacing: 0.32em;
     text-transform: uppercase;
 }
-.description { max-width: 34rem; margin: 1.3rem auto 0; color: var(--text-dim); font-size: 1.1rem; font-style: italic; }
-.header-divider { width: 56px; height: 4px; margin: 1.6rem auto 0; border: 0; border-radius: 4px; background: color-mix(in srgb, var(--accent) 45%, transparent); }
+.description {
+    max-width: 35rem;
+    margin: clamp(1.3rem, 2.5vw, 1.9rem) auto 0;
+    color: var(--text-dim);
+    font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+    font-style: italic;
+    line-height: 1.7;
+    text-wrap: balance;
+}
+.header-divider {
+    width: 64px;
+    height: 3px;
+    margin: clamp(1.8rem, 3.5vw, 2.6rem) auto 0;
+    border: 0;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) 50%, transparent);
+}
 
 /* Sidebar */
 .sidebar {
