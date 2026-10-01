@@ -3,9 +3,13 @@
 
    For every entry of the manifest's `photos` list the photo is downloaded (http/https) or read
    (local path), auto-rotated, converted to WebP in two sizes and written to
-   public/assets/backdrops/<backdrop>/<id>-lg.webp (2400 px wide, wide screens) and -sm.webp
-   (1200 px wide, narrow screens). The mean luminance is printed so too dark photos stand out, and
-   the CSS block and registry entry to paste are printed at the end.
+   public/assets/backdrops/<backdrop>/<id>-lg.webp (2400 px wide, wide screens; portrait photos are
+   cropped to a 3:2 band around `focusY`) and -sm.webp (1000 px wide, narrow screens; keeps up to a
+   3:5 portrait crop). The mean luminance is printed so too dark photos stand out, and the CSS block
+   and registry entry to paste are printed at the end.
+
+   Node's fetch ignores the proxy settings of restricted environments; run it with
+   NODE_USE_ENV_PROXY=1 there (npm run import:backdrops).
 
    Only photos whose licence allows free use on a website and that are not sold on their own
    (Pexels licence, Unsplash licence, Pixabay licence, CC0) should be listed. Keep the credit data
@@ -28,10 +32,8 @@ const argValue = (flag) => {
 const manifestPath = path.resolve(root, argValue('--manifest') || 'scripts/backdrop-photos.json');
 const only = argValue('--only');
 
-const SIZES = [
-  { suffix: 'lg', width: 2400, quality: 72 },
-  { suffix: 'sm', width: 1200, quality: 70 },
-];
+const LG = { width: 2400, quality: 68, minAspect: 1.5 }; // wide screens: never taller than 3:2
+const SM = { width: 1000, quality: 64, minAspect: 0.6 };  // narrow screens: up to 3:5 portrait
 const MAX_BYTES = 40 * 1024 * 1024;
 
 async function load(source) {
@@ -72,13 +74,24 @@ async function main() {
     const outDir = path.join(root, 'public', 'assets', 'backdrops', entry.backdrop);
     await fs.mkdir(outDir, { recursive: true });
 
-    const base = sharp(input, { failOn: 'error' }).rotate();
-    const meta = await base.metadata();
-    console.log(`  source ${meta.width}x${meta.height} ${meta.format}`);
+    // Apply the EXIF orientation first so width/height below are what is displayed
+    const oriented = await sharp(input, { failOn: 'error' }).rotate().toBuffer({ resolveWithObject: true });
+    const { width: srcW, height: srcH } = oriented.info;
+    console.log(`  source ${srcW}x${srcH}`);
+    const focus = Math.min(1, Math.max(0, parseFloat(entry.focusY || '40') / 100));
+    // A cropped band is already centred on the focus, so the CSS focus is its middle
+    const cropped = Math.round(srcW / LG.minAspect) < srcH;
 
-    for (const { suffix, width, quality } of SIZES) {
+    for (const [suffix, size] of [['lg', LG], ['sm', SM]]) {
+      // Crop to the tallest allowed band (width / minAspect), positioned by the vertical focus
+      const bandH = Math.min(srcH, Math.round(srcW / size.minAspect));
+      const top = Math.round((srcH - bandH) * focus);
       const file = path.join(outDir, `${entry.id}-${suffix}.webp`);
-      const info = await base.clone().resize({ width, withoutEnlargement: true }).webp({ quality }).toFile(file);
+      const info = await sharp(oriented.data)
+        .extract({ left: 0, top, width: srcW, height: bandH })
+        .resize({ width: size.width, withoutEnlargement: true })
+        .webp({ quality: size.quality })
+        .toFile(file);
       console.log(`  ${path.relative(root, file)}  ${info.width}x${info.height}  ${(info.size / 1024).toFixed(0)} KB`);
     }
 
@@ -88,13 +101,13 @@ async function main() {
     const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     console.log(`  mean luminance ${luminance.toFixed(2)}${luminance < 0.4 ? '  (dark: the page may feel heavy, consider another photo)' : ''}`);
 
-    const focus = entry.focusY || '40%';
+    const focusY = cropped ? '50%' : (entry.focusY || '40%');
     console.log(`
   Paste into public/assets/css/themes/soft/backdrops.css:
     [data-backdrop="${entry.backdrop}"] {
         --bd-photo-lg: url('/assets/backdrops/${entry.backdrop}/${entry.id}-lg.webp');
         --bd-photo-sm: url('/assets/backdrops/${entry.backdrop}/${entry.id}-sm.webp');
-        --bd-photo-y: ${focus};
+        --bd-photo-y: ${focusY};
         --bd-veil: linear-gradient(180deg, color-mix(in srgb, var(--bd-base) 8%, transparent) 0%, color-mix(in srgb, var(--bd-base) 30%, transparent) 55%, color-mix(in srgb, var(--bd-base) 55%, transparent) 100%);
         --bd-glow-opacity: 0.45;
     }

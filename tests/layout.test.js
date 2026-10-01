@@ -60,8 +60,9 @@ describe('layout.ejs', () => {
   });
 
   it('shows the photo credit escaped, only when the backdrop has one', () => {
-    const base = resolveTheme('soft', 'herbst');
+    const base = resolveTheme('soft', 'winter');
     expect(render({ theme: base })).not.toContain('Hintergrundfoto');
+    expect(render({ theme: resolveTheme('soft', 'herbst') })).toContain('Hintergrundfoto: <a href="https://www.pexels.com/photo/empty-road-2054397/"');
 
     const credited = { ...base, photoCredit: { author: 'A <b>Author</b>', license: 'Pexels License', url: 'https://www.pexels.com/photo/x-1/' } };
     const html = render({ theme: credited });

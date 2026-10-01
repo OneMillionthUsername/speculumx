@@ -116,23 +116,34 @@ body::after {
 }
 
 /* ── Text that sits directly on the backdrop ──
-   Most content lives on translucent surfaces. A few lines (filter label, headings, empty states,
-   year headings) sit straight on the backdrop; a soft halo in the base colour keeps them legible
-   on top of a photograph without drawing a box around them. */
+   Nearly everything lives on translucent surfaces. The few lines that would otherwise sit straight
+   on the background (page headings, filter label, empty-state notes) get a small paper chip, so
+   they stay legible on top of a photograph, whatever it shows. */
 :root { --halo: 0 0 14px color-mix(in srgb, var(--bd-base) 92%, transparent), 0 0 4px color-mix(in srgb, var(--bd-base) 85%, transparent); }
 
-.posts-header label,
-.search-title,
-.search-summary,
-.archive-year-heading,
-.no-posts-card,
-.content-area > h1,
-.content-area > h2,
-.content-area > p,
+.posts-header > label,
+.content-area > :is(h1, h2),
+.content-area > p.text-muted,
 .content-area > section > h2,
-.stats-meta,
-.featured-title,
-.tags-label { text-shadow: var(--halo); }
+.content-area > section > p.text-muted,
+.stats-meta {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.45rem 1.2rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-1);
+}
+.posts-header > label { margin-bottom: 0.7rem; padding-block: 0.3rem; border-radius: var(--r-pill); }
+.content-area > :is(h1, h2) { margin-bottom: 1rem; }
+
+/* Single words and icons that are left over: a quiet halo is enough */
+.tags-label,
+.featured-title { text-shadow: var(--halo); }
 
 /* ── Typography ── */
 h1, h2, h3, h4, h5, h6 {

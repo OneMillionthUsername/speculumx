@@ -53,7 +53,11 @@ export const THEMES = Object.freeze({
     prismStylesheet: null, // pages.css ships its own muted syntax colours
     tinymceContentCss: false,
     backdrops: Object.freeze([
-      Object.freeze({ id: 'herbst', label: 'Herbst' }),
+      // The herbst variants share one palette and differ by their photograph (Pexels License)
+      Object.freeze({ id: 'herbst', label: 'Herbst – Allee', credit: Object.freeze({ author: 'Frans van Heerden', license: 'Pexels License', url: 'https://www.pexels.com/photo/empty-road-2054397/' }) }),
+      Object.freeze({ id: 'herbst-himmel', label: 'Herbst – Straße unter blauem Himmel', credit: Object.freeze({ author: 'Tim Gouw', license: 'Pexels License', url: 'https://www.pexels.com/photo/street-road-near-green-and-yellow-trees-67517/' }) }),
+      Object.freeze({ id: 'herbst-wald', label: 'Herbst – Waldweg im Licht', credit: Object.freeze({ author: 'Artem Saranin', license: 'Pexels License', url: 'https://www.pexels.com/photo/photo-of-a-pathway-in-a-forest-1496373/' }) }),
+      Object.freeze({ id: 'herbst-baeume', label: 'Herbst – Gelber Laubgang', credit: Object.freeze({ author: 'Min An', license: 'Pexels License', url: 'https://www.pexels.com/photo/scenic-view-of-the-forest-during-sunrise-1006121/' }) }),
       Object.freeze({ id: 'winter', label: 'Winter' }),
       Object.freeze({ id: 'nebel', label: 'Nebel' }),
       Object.freeze({ id: 'fruehling', label: 'Frühling' }),
@@ -69,6 +73,9 @@ export const DEFAULT_THEME = 'soft';
 const BACKDROP_ALIASES = Object.freeze({
   'frühling': 'fruehling',
   'fruhling': 'fruehling',
+  'herbst-allee': 'herbst',
+  'herbst-bäume': 'herbst-baeume',
+  'herbst-baume': 'herbst-baeume',
 });
 
 function normalize(value) {

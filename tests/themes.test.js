@@ -12,8 +12,22 @@ describe('resolveTheme', () => {
   });
 
   it('has no photo credit for a backdrop without a photo', () => {
-    expect(resolveTheme('soft', 'herbst').photoCredit).toBeNull();
+    expect(resolveTheme('soft', 'winter').photoCredit).toBeNull();
     expect(resolveTheme('radical', '').photoCredit).toBeNull();
+  });
+
+  it('exposes the credit of a photo backdrop', () => {
+    const credit = resolveTheme('soft', 'herbst-wald').photoCredit;
+    expect(credit).toEqual(expect.objectContaining({ author: 'Artem Saranin', license: 'Pexels License' }));
+    expect(credit.url).toMatch(/^https:\/\/www\.pexels\.com\//);
+  });
+
+  it('accepts the herbst photo variants and their umlaut spellings', () => {
+    for (const id of ['herbst', 'herbst-himmel', 'herbst-wald', 'herbst-baeume']) {
+      expect(resolveTheme('soft', id).backdrop).toBe(id);
+    }
+    expect(resolveTheme('soft', 'Herbst-Bäume').backdrop).toBe('herbst-baeume');
+    expect(resolveTheme('soft', 'herbst-allee').backdrop).toBe('herbst');
   });
 
   it('keeps the original theme selectable and without a backdrop', () => {

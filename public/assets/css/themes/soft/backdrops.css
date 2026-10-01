@@ -23,9 +23,11 @@
      3. BLOG_BACKDROP=<id>
    ============================================================ */
 
-/* ── Herbst (default): sunny autumn day — yellow leaves, golden light, sky still blue ── */
+/* ── Herbst (default): sunny autumn day — yellow leaves, golden light, sky still blue ──
+   One palette for all herbst variants: [data-backdrop|="herbst"] matches "herbst" and "herbst-…".
+   The variants only differ by their photo (see "Photo backdrops" at the end). */
 :root,
-[data-backdrop="herbst"] {
+[data-backdrop|="herbst"] {
     --bd-base: #fbf1d8;
     --bd-glow-1: #a9cdea;   /* sky blue, top left */
     --bd-glow-2: #f6d46f;   /* sunlit yellow leaves, top right */
@@ -217,4 +219,49 @@
 
     --shadow-rgb: 70 90 90;
     --overlay: rgba(45, 42, 36, 0.38);
+}
+
+/* ============================================================
+   Photo backdrops (herbst variants)
+   Photographs from Pexels (Pexels License: free to use, no attribution required);
+   the credit shown in the footer lives in config/themes.js.
+   The photo sits below the colour fields (see base.css); --bd-veil washes it with the base
+   colour, lighter at the top and stronger towards the bottom where the text is, and
+   --bd-glow-opacity lets the colour fields tint it gently.
+   ============================================================ */
+
+/* herbst: avenue in perspective (Frans van Heerden) */
+[data-backdrop="herbst"] {
+    --bd-photo-lg: url('/assets/backdrops/herbst/allee-lg.webp');
+    --bd-photo-sm: url('/assets/backdrops/herbst/allee-sm.webp');
+    --bd-photo-y: 50%;
+    --bd-veil: linear-gradient(180deg, color-mix(in srgb, var(--bd-base) 34%, transparent) 0%, color-mix(in srgb, var(--bd-base) 52%, transparent) 50%, color-mix(in srgb, var(--bd-base) 70%, transparent) 100%);
+    --bd-glow-opacity: 0.45;
+}
+
+/* herbst-himmel: road under a blue sky (Tim Gouw) */
+[data-backdrop="herbst-himmel"] {
+    --bd-photo-lg: url('/assets/backdrops/herbst-himmel/strasse-lg.webp');
+    --bd-photo-sm: url('/assets/backdrops/herbst-himmel/strasse-sm.webp');
+    --bd-photo-y: 55%;
+    --bd-veil: linear-gradient(180deg, color-mix(in srgb, var(--bd-base) 10%, transparent) 0%, color-mix(in srgb, var(--bd-base) 36%, transparent) 50%, color-mix(in srgb, var(--bd-base) 62%, transparent) 100%);
+    --bd-glow-opacity: 0.35;
+}
+
+/* herbst-wald: sunlit forest path (Artem Saranin) */
+[data-backdrop="herbst-wald"] {
+    --bd-photo-lg: url('/assets/backdrops/herbst-wald/waldweg-lg.webp');
+    --bd-photo-sm: url('/assets/backdrops/herbst-wald/waldweg-sm.webp');
+    --bd-photo-y: 50%;
+    --bd-veil: linear-gradient(180deg, color-mix(in srgb, var(--bd-base) 14%, transparent) 0%, color-mix(in srgb, var(--bd-base) 38%, transparent) 50%, color-mix(in srgb, var(--bd-base) 62%, transparent) 100%);
+    --bd-glow-opacity: 0.4;
+}
+
+/* herbst-baeume: yellow avenue of tall trees (Min An) */
+[data-backdrop="herbst-baeume"] {
+    --bd-photo-lg: url('/assets/backdrops/herbst-baeume/laubgang-lg.webp');
+    --bd-photo-sm: url('/assets/backdrops/herbst-baeume/laubgang-sm.webp');
+    --bd-photo-y: 50%;
+    --bd-veil: linear-gradient(180deg, color-mix(in srgb, var(--bd-base) 16%, transparent) 0%, color-mix(in srgb, var(--bd-base) 38%, transparent) 50%, color-mix(in srgb, var(--bd-base) 62%, transparent) 100%);
+    --bd-glow-opacity: 0.4;
 }

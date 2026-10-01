@@ -9,12 +9,14 @@ import { THEMES } from '../config/themes.js';
 
 const css = fs.readFileSync(path.resolve(process.cwd(), 'public/assets/css/themes/soft/backdrops.css'), 'utf8');
 
+// Palette blocks (those that define --text); photo-only blocks of the herbst variants are skipped.
+// [data-backdrop|="herbst"] covers "herbst" and every "herbst-…" variant.
 function parseBackdrops() {
   const blocks = {};
-  for (const match of css.matchAll(/(?::root,\s*)?\[data-backdrop="([\w-]+)"\]\s*\{([^}]*)\}/g)) {
+  for (const match of css.matchAll(/\[data-backdrop\|?="([\w-]+)"\]\s*\{([^}]*)\}/g)) {
     const vars = {};
     for (const [, name, value] of match[2].matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})\b/g)) vars[name] = value;
-    blocks[match[1]] = vars;
+    if (vars.text) blocks[match[1]] = vars;
   }
   return blocks;
 }
@@ -77,9 +79,11 @@ function pairs(v) {
 const backdrops = parseBackdrops();
 
 describe('soft theme palettes', () => {
-  it('defines a palette for every backdrop the registry lists', () => {
-    const ids = THEMES.soft.backdrops.map(b => b.id);
-    for (const id of ids) expect(Object.keys(backdrops)).toContain(id);
+  it('defines a palette for every backdrop the registry lists (variants share their base palette)', () => {
+    for (const { id } of THEMES.soft.backdrops) {
+      const paletteId = backdrops[id] ? id : id.split('-')[0];
+      expect(Object.keys(backdrops)).toContain(paletteId);
+    }
   });
 
   it.each(Object.entries(backdrops))('%s keeps text and accents readable', (name, vars) => {

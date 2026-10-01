@@ -334,7 +334,7 @@
     padding: 0.7rem 1.35rem;
     border: 1px solid transparent;
     border-radius: var(--r-pill);
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface-solid));
     color: var(--accent-strong);
     font-family: var(--font-ui);
     font-size: 0.8rem;
@@ -349,10 +349,10 @@
     transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-base) var(--ease), border-color var(--t-fast) var(--ease);
 }
 .btn:hover {
-    background: color-mix(in srgb, var(--accent) 26%, transparent);
+    background: color-mix(in srgb, var(--accent) 26%, var(--surface-solid));
     color: var(--accent-strong);
     transform: translateY(-1px);
-    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--accent) 55%, transparent);
+    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--accent) 55%, var(--surface-solid));
 }
 .btn:active { transform: translateY(0); box-shadow: none; }
 .btn:disabled, .btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -362,18 +362,18 @@
 
 /* Variants: same shape, different tone */
 .btn-outline-secondary, .btn-secondary, .btn-secondary-theme, .btn-light, .btn-dark {
-    background: color-mix(in srgb, var(--text) 7%, transparent);
+    background: color-mix(in srgb, var(--text) 7%, var(--surface-solid));
     border-color: var(--line);
     color: var(--text);
 }
 .btn-outline-secondary:hover, .btn-secondary:hover, .btn-secondary-theme:hover, .btn-light:hover, .btn-dark:hover {
-    background: color-mix(in srgb, var(--text) 13%, transparent);
+    background: color-mix(in srgb, var(--text) 13%, var(--surface-solid));
     color: var(--text);
     box-shadow: 0 8px 22px -12px rgb(var(--shadow-rgb) / 0.5);
 }
 .btn-outline-secondary.active {
-    background: color-mix(in srgb, var(--accent) 22%, transparent);
-    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface-solid));
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--surface-solid));
     color: var(--accent-strong);
 }
 
@@ -384,33 +384,33 @@
 .btn-primary:hover { background: var(--accent-strong); color: var(--accent-ink); }
 
 .btn-outline-success, .btn-success, .btn-info, .btn-outline-info {
-    background: color-mix(in srgb, var(--success) 15%, transparent);
+    background: color-mix(in srgb, var(--success) 15%, var(--surface-solid));
     color: var(--success);
 }
 .btn-outline-success:hover, .btn-success:hover, .btn-info:hover, .btn-outline-info:hover {
-    background: color-mix(in srgb, var(--success) 25%, transparent);
+    background: color-mix(in srgb, var(--success) 25%, var(--surface-solid));
     color: var(--success);
-    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--success) 55%, transparent);
+    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--success) 55%, var(--surface-solid));
 }
 
 .btn-outline-warning, .btn-warning {
-    background: color-mix(in srgb, var(--tone-2) 16%, transparent);
+    background: color-mix(in srgb, var(--tone-2) 16%, var(--surface-solid));
     color: var(--tone-2);
 }
 .btn-outline-warning:hover, .btn-warning:hover {
-    background: color-mix(in srgb, var(--tone-2) 26%, transparent);
+    background: color-mix(in srgb, var(--tone-2) 26%, var(--surface-solid));
     color: var(--tone-2);
-    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--tone-2) 55%, transparent);
+    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--tone-2) 55%, var(--surface-solid));
 }
 
 .btn-outline-danger, .btn-danger {
-    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    background: color-mix(in srgb, var(--danger) 14%, var(--surface-solid));
     color: var(--danger);
 }
 .btn-outline-danger:hover, .btn-danger:hover {
-    background: color-mix(in srgb, var(--danger) 24%, transparent);
+    background: color-mix(in srgb, var(--danger) 24%, var(--surface-solid));
     color: var(--danger);
-    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--danger) 55%, transparent);
+    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--danger) 55%, var(--surface-solid));
 }
 
 .btn-icon { font-size: 1.1em; line-height: 1; }
@@ -584,7 +584,7 @@ input[type="checkbox"] { accent-color: var(--accent); }
     white-space: nowrap;
     vertical-align: middle;
 }
-.badge-secondary { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text-dim); }
+.badge-secondary { background: color-mix(in srgb, var(--text) 10%, var(--surface-solid)); color: var(--text-dim); }
 
 a.tag, .tag {
     display: inline-flex;
@@ -593,7 +593,7 @@ a.tag, .tag {
     padding: 0.3rem 0.85rem;
     border: 1px solid transparent;
     border-radius: var(--r-pill);
-    background: color-mix(in srgb, var(--tone-3) 16%, transparent);
+    background: color-mix(in srgb, var(--tone-3) 16%, var(--surface-solid));
     color: var(--tone-3);
     font-family: var(--font-ui);
     font-size: 0.74rem;
@@ -601,7 +601,7 @@ a.tag, .tag {
     text-decoration: none;
     transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
-a.tag:hover { background: color-mix(in srgb, var(--tone-3) 28%, transparent); color: var(--text); transform: translateY(-1px); }
+a.tag:hover { background: color-mix(in srgb, var(--tone-3) 28%, var(--surface-solid)); color: var(--text); transform: translateY(-1px); }
 .post-tags-container { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tags-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .tags-label { font-family: var(--font-ui); font-size: 0.74rem; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
@@ -645,14 +645,14 @@ a.tag:hover { background: color-mix(in srgb, var(--tone-3) 28%, transparent); co
     padding: 0 0.9rem;
     border: 1px solid var(--line);
     border-radius: var(--r-pill);
-    background: color-mix(in srgb, var(--text) 6%, transparent);
+    background: color-mix(in srgb, var(--text) 6%, var(--surface-solid));
     color: var(--text-dim);
     font-family: var(--font-ui);
     font-size: 0.82rem;
     text-decoration: none;
     transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
-a.page-link:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-strong); transform: translateY(-1px); }
+a.page-link:hover { background: color-mix(in srgb, var(--accent) 18%, var(--surface-solid)); color: var(--accent-strong); transform: translateY(-1px); }
 .page-item.active .page-link { background: var(--accent); border-color: transparent; color: var(--accent-ink); font-weight: 500; }
 .page-item.disabled .page-link { opacity: 0.4; pointer-events: none; }
 #cards-page-info { font-family: var(--font-ui); font-size: 0.78rem; color: var(--text-dim); }
