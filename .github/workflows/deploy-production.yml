@@ -28,6 +28,10 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+            # Any failing command (git, docker build, ...) must fail the deployment instead of
+            # leaving the old container running and reporting success.
+            set -eu
+
             cd /var/www/speculumx/blog
             
             # 1. SSH-Key explizit für Git-Operationen definieren
@@ -38,10 +42,22 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
+            # Guard against a stale checkout: the commit that passed CI must be part of what is
+            # deployed. A newer commit on main is fine, it contains the tested one. Empty when the
+            # workflow was started manually.
+            EXPECTED_SHA="${{ github.event.workflow_run.head_sha }}"
+            DEPLOYED_SHA="$(git rev-parse HEAD)"
+            echo "Deploying commit $(git rev-parse --short HEAD)"
+            if [ -n "$EXPECTED_SHA" ] && ! git merge-base --is-ancestor "$EXPECTED_SHA" HEAD; then
+              echo "❌ Fehler: Der Server-Checkout ($DEPLOYED_SHA) enthält den getesteten Commit $EXPECTED_SHA nicht."
+              exit 1
+            fi
+
             # 3. Berechtigungen für Nginx korrigieren (UMASK 027 Kompensation)
             # Nur public/ muss für www-data lesbar sein (statische Assets)
-            find /var/www/speculumx/blog/public -type f -exec chmod o+r {} \;
-            find /var/www/speculumx/blog/public -type d -exec chmod o+x {} \;
+            # Best effort: Dateien anderer Besitzer (z. B. Uploads) lassen sich nicht ändern.
+            find /var/www/speculumx/blog/public -type f -exec chmod o+r {} \; || true
+            find /var/www/speculumx/blog/public -type d -exec chmod o+x {} \; || true
 
             # 4. Umgebungsvariablen für Docker setzen
             export NODE_ENV=production
