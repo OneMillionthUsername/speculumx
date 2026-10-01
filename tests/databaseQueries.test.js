@@ -13,7 +13,7 @@ jest.unstable_mockModule('../utils/logger.js', () => ({
   default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
 }));
 
-const { initializeDatabase, closeDatabase, isMockDatabase, DatabaseService } = await import('../databases/mariaDB.js');
+const { initializeDatabase, initializeDatabaseSchema, closeDatabase, isMockDatabase, DatabaseService } = await import('../databases/mariaDB.js');
 
 describe('DatabaseService queries', () => {
   beforeAll(async () => {
@@ -32,6 +32,27 @@ describe('DatabaseService queries', () => {
     mockQuery.mockResolvedValue([]);
 
     await expect(DatabaseService.getAllCards()).resolves.toEqual([]);
+  });
+
+  describe('schema', () => {
+    it('adds the auto_generated column to an existing cards table', async () => {
+      mockQuery.mockReset();
+      mockQuery.mockResolvedValue({});
+
+      await expect(initializeDatabaseSchema()).resolves.toBe(true);
+
+      expect(mockQuery).toHaveBeenCalledWith(expect.stringMatching(/ALTER TABLE cards ADD COLUMN IF NOT EXISTS auto_generated BOOLEAN NOT NULL DEFAULT 0/));
+    });
+
+    it('still starts when the column cannot be added', async () => {
+      mockQuery.mockReset();
+      mockQuery.mockImplementation(async (sql) => {
+        if (/ALTER TABLE cards/.test(sql)) throw new Error('ALTER command denied');
+        return {};
+      });
+
+      await expect(initializeDatabaseSchema()).resolves.toBe(true);
+    });
   });
 
   describe('auto-generated draft cards', () => {

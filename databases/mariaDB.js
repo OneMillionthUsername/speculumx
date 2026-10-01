@@ -302,7 +302,13 @@ export async function initializeDatabaseSchema() {
     // Marks drafts created by the weekly digest (scripts/weekly-cards.mjs); the ones that are
     // still unpublished after a while are deleted. CREATE TABLE above does not touch existing
     // tables, so databases from before this column get it here.
-    await conn.query('ALTER TABLE cards ADD COLUMN IF NOT EXISTS auto_generated BOOLEAN NOT NULL DEFAULT 0 AFTER published');
+    // A failure here must not keep the whole site from starting: only the card digest and the
+    // admin card forms depend on the column.
+    try {
+      await conn.query('ALTER TABLE cards ADD COLUMN IF NOT EXISTS auto_generated BOOLEAN NOT NULL DEFAULT 0 AFTER published');
+    } catch (error) {
+      logger.error(`Could not add cards.auto_generated: ${error.message}`);
+    }
 
     // Analytics/Views-Tabelle
     // await conn.query(`
