@@ -6,6 +6,8 @@ Anleitung für die Person (oder den Claude) auf dem Produktionsserver. Das Featu
 
 Einmal pro Woche sammelt `scripts/weekly-cards.mjs` Meldungen der letzten 7 Tage aus Hacker News (Algolia-API, mind. 150 Punkte) und 20 RSS/Atom-Feeds (`config/cardDigest.js`). Ein LLM wählt höchstens 5 Meldungen aus, die zu den Blog-Themen passen (Programmierung, KI/LLMs, Wissenschaft, Philosophie, Gesellschaft). Daraus entstehen **unveröffentlichte** Cards. Veröffentlicht wird von Hand unter `/cards/manage` (Bearbeiten, „Veröffentlicht“ anhaken). Es wird nichts automatisch veröffentlicht.
 
+**Aufräumen:** Zu Beginn jedes Laufs werden automatisch erzeugte Cards gelöscht, die nach 30 Tagen noch unveröffentlicht sind, samt ihren Bilddateien. Die Cards tragen dafür die Markierung `auto_generated`. Sobald eine Card veröffentlicht wird, verliert sie die Markierung und bleibt für immer erhalten, auch wenn sie später wieder versteckt wird. Von Hand angelegte Cards werden nie gelöscht.
+
 Bild je Card, in dieser Reihenfolge:
 
 1. Ein Bild der verlinkten Seite, **nur** wenn eine freie Lizenz maschinenlesbar belegt ist (Wikimedia Commons mit CC0/Public Domain, oder die Seite erklärt sich per `rel="license"`/JSON-LD zu CC0/Public Domain). Es wird lokal gespeichert, nie hotgelinkt.
@@ -35,6 +37,7 @@ Optional (Standardwerte in Klammern):
 | Variable | Wirkung |
 | --- | --- |
 | `CARD_DIGEST_MAX_CARDS` (5) | Entwürfe pro Lauf, 1–10 |
+| `CARD_DIGEST_DRAFT_TTL_DAYS` (30) | Tage, nach denen unveröffentlichte Auto-Entwürfe gelöscht werden, `0` schaltet das Löschen ab |
 | `CARD_DIGEST_DAYS` (7) | Alter der Meldungen in Tagen |
 | `CARD_DIGEST_HN_MIN_POINTS` (150) | Mindestpunkte für Hacker-News-Meldungen |
 | `CARD_DIGEST_LANGUAGE` (Deutsch) | Sprache von Titel und Untertitel |
@@ -59,6 +62,9 @@ docker exec speculumx_app node scripts/weekly-cards.mjs --check-sources
 # Bildmodell: kann der API-Schlüssel Bilder erzeugen?
 docker exec speculumx_app node scripts/weekly-cards.mjs --test-image
 
+# Aufräumen vorab ansehen: welche Entwürfe würden gelöscht?
+docker exec speculumx_app node scripts/weekly-cards.mjs --cleanup-only --dry-run
+
 # Trockenlauf: wählt aus und zeigt die Cards, schreibt nichts
 docker exec speculumx_app node scripts/weekly-cards.mjs --dry-run
 
@@ -70,6 +76,7 @@ Erwartung und Maßnahmen:
 
 - `--check-sources`: Feeds, die `FAIL` melden, sind eingestellt oder haben eine neue URL. Die URL in `config/cardDigest.js` korrigieren oder den Eintrag entfernen (per Pull Request, nicht auf dem Server). Ein einzelner ausgefallener Feed bricht den Lauf nicht ab, nur wenn **alle** Quellen ausfallen. Die Feed-URLs wurden bei der Entwicklung nicht live geprüft, ein paar Korrekturen sind beim ersten Lauf zu erwarten.
 - `--test-image`: Meldet `FAIL`, wenn das Modell unbekannt ist oder der Schlüssel keine Bilder erzeugen darf (Bildgenerierung ist nicht in jedem kostenlosen Kontingent enthalten). Dann entweder `CARD_DIGEST_IMAGE_MODELS` auf ein verfügbares Bildmodell setzen oder `CARD_DIGEST_AI_IMAGES=false`. Die Cards bekommen in beiden Fällen ein Bild, nämlich das Standardbild.
+- Datenbank: Die Spalte `auto_generated` in der Tabelle `cards` legt die App beim Start selbst an (`ALTER TABLE … ADD COLUMN IF NOT EXISTS`), das Skript sichert sie zusätzlich ab. Eine Migration ist nicht nötig. Prüfen: `docker exec speculumx_db mariadb -u<DB_USER> -p -e "SHOW COLUMNS FROM cards LIKE 'auto_generated'" <DB_NAME>`.
 - Echter Lauf: Danach unter `/cards/manage` prüfen, ob die Entwürfe mit Bild und Quelle erscheinen. Eine Bilddatei abrufen und prüfen, dass sie über den Webserver ausgeliefert wird:
 
   ```bash
@@ -127,7 +134,8 @@ Der Lauf beendet sich mit Exit-Code 1, wenn alle Quellen, das LLM oder die Daten
 
 ## Betrieb
 
-- Abgelehnte Entwürfe **nicht löschen**, sondern unveröffentlicht lassen. Der Job überspringt jede URL, die schon als Card existiert (auch unveröffentlicht), und schlägt sie dann nicht erneut vor.
+- Abgelehnte Entwürfe müssen nicht gelöscht werden: Unveröffentlichte Auto-Entwürfe verschwinden nach 30 Tagen von selbst. Ein gelöschter Entwurf kommt nicht als neue Meldung zurück, weil die Meldung dann älter ist als das 7-Tage-Fenster. Bis dahin überspringt der Job jede URL, die schon als Card existiert (auch unveröffentlicht).
+- Eine Card dauerhaft behalten, ohne sie zu veröffentlichen, geht nicht: Sie muss einmal veröffentlicht werden (danach darf sie wieder versteckt werden).
 - Ein zweiter Lauf in derselben Woche legt weitere Entwürfe aus dem Rest der Meldungen an. Vorher `--dry-run` nutzen.
 - Das Standardbild lässt sich ersetzen, indem die drei Dateien `card-default.webp`, `-344.webp` und `-688.webp` in `public/assets/img/` ausgetauscht werden (Größen 1032×930, 344×310, 688×620). `npm run cards:default-image` rendert das mitgelieferte Bild neu.
 - KI-Bilder tragen das unsichtbare SynthID-Wasserzeichen von Google. Eine sichtbare Kennzeichnung gibt es nicht. Die Dateinamen mit `ai-` zeigen, welche Bilder generiert sind.

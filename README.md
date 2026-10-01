@@ -49,6 +49,7 @@ Ungültige Werte fallen auf den Standard zurück und werden beim Start im Log ge
 
 `scripts/weekly-cards.mjs` sammelt einmal pro Woche die wichtigsten Meldungen (Hacker News ab 150 Punkten plus RSS/Atom-Feeds aus `config/cardDigest.js`), lässt ein LLM die zu den Blog-Themen passenden auswählen und legt sie als **unveröffentlichte** Cards an. Freigegeben wird unter `/cards/manage`.
 
+- Aufräumen: Automatisch erzeugte Cards, die nach 30 Tagen (`CARD_DIGEST_DRAFT_TTL_DAYS`) noch unveröffentlicht sind, werden samt Bilddateien gelöscht. Veröffentlichte und von Hand angelegte Cards bleiben immer erhalten.
 - Bild: ein Bild mit maschinenlesbar belegter freier Lizenz (CC0/Public Domain, lokal gespeichert), sonst eine KI-Illustration, sonst das Standardbild `public/assets/img/card-default.webp`.
 - Aufruf: `node scripts/weekly-cards.mjs [--dry-run | --check-sources | --test-image] [--limit n] [--days n]`; in Entwicklung auch als `npm run cards:weekly:dry`, `cards:check-sources`, `cards:test-image`.
 - Einrichtung auf dem Server (Zeitplan, Variablen, Prüfung): `docs/weekly-cards-server-setup.md`.

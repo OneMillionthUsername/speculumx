@@ -58,6 +58,33 @@ export async function saveCardImage(buffer, { prefix, key, minWidth, minHeight, 
 }
 
 /**
+ * Deletes the files of a card image that this module created (AI-generated or licensed, stored as
+ * <name>.webp, <name>-344.webp and <name>-688.webp). Anything else - the default image, external
+ * URLs, files uploaded by hand - is left alone.
+ * @param {string} imgLink - img_link of the deleted card.
+ * @param {Object} [options]
+ * @param {string} [options.mediaDir]
+ * @param {string} [options.mediaUrl]
+ * @returns {Promise<number>} Number of files removed.
+ */
+export async function removeCardImageFiles(imgLink, { mediaDir = CARD_MEDIA_DIR, mediaUrl = CARD_MEDIA_URL } = {}) {
+  const link = String(imgLink ?? '');
+  const match = /^((?:ai|lic)-[0-9a-f]{12})\.webp$/.exec(path.posix.basename(link));
+  if (!match || path.posix.dirname(link) !== mediaUrl) return 0;
+  let removed = 0;
+  for (const suffix of ['', '-344', '-688']) {
+    const file = path.join(mediaDir, `${match[1]}${suffix}.webp`);
+    try {
+      await fs.unlink(file);
+      removed++;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+  return removed;
+}
+
+/**
  * @param {Object} card
  * @param {string} card.pageUrl - The article the card links to (looked at for a licensed image).
  * @param {string} [card.imagePrompt] - Motif for the AI illustration; without it step 2 is skipped.

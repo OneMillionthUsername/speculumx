@@ -9,7 +9,7 @@ jest.unstable_mockModule('../utils/logger.js', () => ({
   default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
 }));
 
-const { resolveCardImage, saveCardImage } = await import('../services/cardImageService.js');
+const { resolveCardImage, saveCardImage, removeCardImageFiles } = await import('../services/cardImageService.js');
 const { DEFAULT_CARD_IMAGE } = await import('../config/cardDigest.js');
 
 const options = { licensedImages: true, aiImages: true, userAgent: 'test-agent' };
@@ -122,5 +122,36 @@ describe('resolveCardImage', () => {
     expect(ai).toMatchObject({ source: 'ai', detail: expect.stringContaining('would generate') });
     expect(download).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
+  });
+});
+
+describe('removeCardImageFiles', () => {
+  const opts = () => ({ mediaDir, mediaUrl: '/assets/media/cards' });
+
+  it('removes the base file and both variants of a generated image', async () => {
+    const link = await saveCardImage(await png(800, 600), { prefix: 'ai', key: 'rm1', minWidth: 256, minHeight: 256, ...opts() });
+    const stem = path.join(mediaDir, path.basename(link, '.webp'));
+    expect(fs.existsSync(`${stem}-344.webp`)).toBe(true);
+    expect(await removeCardImageFiles(link, opts())).toBe(3);
+    for (const suffix of ['', '-344', '-688']) expect(fs.existsSync(`${stem}${suffix}.webp`)).toBe(false);
+  });
+
+  it('does not fail when the files are already gone', async () => {
+    expect(await removeCardImageFiles('/assets/media/cards/ai-0123456789ab.webp', opts())).toBe(0);
+  });
+
+  it.each([
+    ['the default image', '/assets/img/card-default.webp'],
+    ['an external image', 'https://example.org/ai-0123456789ab.webp'],
+    ['an upload by hand', '/assets/media/2026/03/foto-1.webp'],
+    ['a path outside the card folder', '/assets/media/cards/../ai-0123456789ab.webp'],
+    ['a name that is not generated', '/assets/media/cards/mine.webp'],
+    ['nothing', undefined],
+  ])('leaves %s alone', async (_label, link) => {
+    const keep = path.join(mediaDir, 'ai-0123456789ab.webp');
+    fs.writeFileSync(keep, 'x');
+    expect(await removeCardImageFiles(link, opts())).toBe(0);
+    expect(fs.existsSync(keep)).toBe(true);
+    fs.rmSync(keep);
   });
 });

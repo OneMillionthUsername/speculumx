@@ -31,6 +31,8 @@ export const CARD_DIGEST = {
   // Hacker News: only stories with at least this many points count as "big"
   hnMinPoints: parseInteger(process.env.CARD_DIGEST_HN_MIN_POINTS, 150, 0, 5000),
   hnMaxItems: 40,
+  // Unpublished auto-generated drafts are deleted after this many days (0 = keep them)
+  draftTtlDays: parseInteger(process.env.CARD_DIGEST_DRAFT_TTL_DAYS, 30, 0, 365),
   // Newest items taken from each feed
   perFeedMax: 10,
   // Upper bound for the candidate list that is sent to the LLM
