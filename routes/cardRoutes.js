@@ -6,7 +6,6 @@ import { celebrate, Joi, Segments } from 'celebrate';
 import csrfProtection from '../utils/csrf.js';
 import logger from '../utils/logger.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
-import { getSafeRefererPath } from '../utils/requestUtils.js';
 
 /**
  * Routes for Cards (small discoverable items shown on the site).
@@ -14,6 +13,9 @@ import { getSafeRefererPath } from '../utils/requestUtils.js';
  * - `GET /create` renders the card creation form (admin only)
  * - `POST /create` creates a card via HTML form (admin only)
  * - `POST /:id/delete` deletes a card (admin only)
+ *
+ * After saving or deleting, the admin returns to the card list (/cards/manage); after an edit it scrolls
+ * to the edited card (#card-<id>, views/adminCards.ejs).
  */
 const cardRouter = express.Router();
 
@@ -79,7 +81,7 @@ cardRouter.post('/create',
     try {
       const published = req.body.published === 'on' || req.body.published === true;
       await cardController.createCard({ ...req.body, published });
-      return res.redirect(303, '/');
+      return res.redirect(303, '/cards/manage');
     } catch (error) {
       logger.error('Error creating card (SSR):', error);
       return res.redirect(303, '/cards/create?error=1');
@@ -109,7 +111,7 @@ cardRouter.get('/:id/edit',
       return res.render('cardCreate', { isAdmin, csrfToken, card, formAction: `/cards/${cardId}/update`, error });
     } catch (err) {
       logger.error('Error loading card for edit:', err);
-      return res.redirect(303, '/?cardEditError=1');
+      return res.redirect(303, '/cards/manage');
     }
   },
 );
@@ -137,7 +139,7 @@ cardRouter.post('/:id/update',
     try {
       const published = req.body.published === 'on' || req.body.published === true;
       await cardController.updateCard(cardId, { ...req.body, published });
-      return res.redirect(303, '/');
+      return res.redirect(303, `/cards/manage#card-${cardId}`);
     } catch (err) {
       logger.error('Error updating card (SSR):', err);
       return res.redirect(303, `/cards/${cardId}/edit?error=1`);
@@ -159,7 +161,8 @@ cardRouter.post('/:id/delete',
   async (req, res) => {
     const cardId = parseInt(req.params.id);
     const wantsJson = req.headers.accept && req.headers.accept.includes('application/json');
-    const returnTo = getSafeRefererPath(req, '/cards/manage');
+    // Not the referring page: that is the edit page of the card that no longer exists
+    const returnTo = '/cards/manage';
 
     try {
       await cardController.deleteCard(cardId);

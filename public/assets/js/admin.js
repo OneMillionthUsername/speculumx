@@ -317,7 +317,7 @@ export function initializeAdminDelegation() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          showNotification('Post erfolgreich gelöscht', 'success');
+          showNotification(form.action.includes('/cards/') ? 'Card gelöscht' : 'Post erfolgreich gelöscht', 'success');
           setTimeout(() => { window.location.href = data.returnTo || '/'; }, 1500);
         } else {
           showNotification(data.error || 'Fehler beim Löschen', 'error');

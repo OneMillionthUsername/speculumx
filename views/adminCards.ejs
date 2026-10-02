@@ -23,7 +23,7 @@
                                 let __host = card.link;
                                 try { __host = new URL(card.link).hostname.replace(/^www\./, ''); } catch (_e) { /* keep the raw link */ }
                             %>
-                            <article class="blog-post-card admin-card">
+                            <article class="blog-post-card admin-card" id="card-<%= card.id %>">
                                 <div class="admin-card-thumb">
                                     <% if (__thumb) { %>
                                         <img src="<%= __thumb %>" alt="" width="172" height="155" loading="lazy" decoding="async">
