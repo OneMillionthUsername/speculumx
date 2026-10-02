@@ -278,7 +278,8 @@ export function capCandidates(candidates, max) {
 }
 
 /**
- * Fetches all sources in parallel. One broken source never aborts the run.
+ * Fetches all sources in parallel. One broken source never aborts the run; a failed source is tried
+ * once more, because single timeouts happen now and then.
  * @param {Object} options
  * @param {Array<{id: string, name: string, url: string}>} options.feeds
  * @returns {Promise<{candidates: Array<Object>, report: Array<{source: string, ok: boolean, count: number, error?: string}>}>}
@@ -288,7 +289,7 @@ export async function collectCandidates({ feeds, ...options }) {
     { name: 'Hacker News', run: () => fetchHackerNews(options) },
     ...feeds.map(feed => ({ name: feed.name, run: () => fetchFeed(feed, options) })),
   ];
-  const settled = await Promise.allSettled(jobs.map(job => job.run()));
+  const settled = await Promise.allSettled(jobs.map(job => job.run().catch(() => job.run())));
   const report = [];
   const collected = [];
   settled.forEach((result, index) => {

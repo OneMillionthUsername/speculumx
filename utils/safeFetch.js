@@ -71,6 +71,23 @@ function createGuardedLookup(isPublic) {
 const REDIRECT_STATUS = new Set([301, 302, 303, 307, 308]);
 const ALLOWED_PORTS = new Set(['80', '443']);
 
+// Node tries the addresses of a dual-stack host one after another ("Happy Eyeballs") and gives each
+// only 250 ms by default. The container has no IPv6 route, so IPv6 fails at once; a slow IPv4
+// handshake (one lost SYN through the rootless Docker network) then failed the whole request.
+const ADDRESS_ATTEMPT_TIMEOUT_MS = 2_500;
+
+/**
+ * A failed Happy-Eyeballs connect is an AggregateError with an empty message; this lists the
+ * attempts instead. Other errors are returned unchanged.
+ * @param {Error} error
+ * @returns {Error}
+ */
+export function connectError(error) {
+  if (error?.message || !Array.isArray(error?.errors)) return error;
+  const details = error.errors.map(inner => [inner.code || inner.message, inner.address && `${inner.address}:${inner.port}`].filter(Boolean).join(' '));
+  return new FetchError(`Connection failed: ${details.join(' | ')}`);
+}
+
 const DECOMPRESSORS = {
   gzip: zlib.createGunzip,
   'x-gzip': zlib.createGunzip,
@@ -121,7 +138,12 @@ function requestOnce(urlString, { method, headers, maxBytes, timeoutMs, isPublic
     };
     const timer = setTimeout(() => fail(new FetchError(`Timeout after ${timeoutMs} ms`)), timeoutMs);
 
-    const request = transport.request(url, { method, headers, lookup: createGuardedLookup(isPublic) }, (response) => {
+    const request = transport.request(url, {
+      method,
+      headers,
+      lookup: createGuardedLookup(isPublic),
+      autoSelectFamilyAttemptTimeout: ADDRESS_ATTEMPT_TIMEOUT_MS,
+    }, (response) => {
       const status = response.statusCode || 0;
       const responseHeaders = response.headers;
       if (method === 'HEAD' || REDIRECT_STATUS.has(status)) {
@@ -146,7 +168,7 @@ function requestOnce(urlString, { method, headers, maxBytes, timeoutMs, isPublic
       source.on('end', () => finish(resolve, { status, headers: responseHeaders, body: Buffer.concat(chunks) }));
       source.on('error', fail);
     });
-    request.on('error', fail);
+    request.on('error', error => fail(connectError(error)));
     request.end();
   });
 }
