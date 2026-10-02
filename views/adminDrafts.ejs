@@ -14,7 +14,7 @@
                 <% if (typeof drafts !== 'undefined' && Array.isArray(drafts) && drafts.length > 0) { %>
                     <div id="drafts-list">
                         <% drafts.forEach(function(post) { %>
-                            <article class="blog-post-card">
+                            <article class="blog-post-card" id="post-<%= post.id %>">
                                 <div class="post-meta">
                                     <span class="post-date">Erstellt: <%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
                                     <span class="post-author">von <%= post.author || 'Gast' %></span>
@@ -44,7 +44,7 @@
                 <% if (typeof unpublished !== 'undefined' && Array.isArray(unpublished) && unpublished.length > 0) { %>
                     <div id="unpublished-list">
                         <% unpublished.forEach(function(post) { %>
-                            <article class="blog-post-card">
+                            <article class="blog-post-card" id="post-<%= post.id %>">
                                 <div class="post-meta">
                                     <span class="post-date">Erstellt: <%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
                                     <% if (post.published_at) { %>
