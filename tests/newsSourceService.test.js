@@ -239,4 +239,15 @@ describe('collectCandidates', () => {
     expect(report.find(r => r.source === 'Broken feed')).toMatchObject({ ok: false, error: 'getaddrinfo ENOTFOUND' });
     expect(report.find(r => r.source === 'Hacker News')).toMatchObject({ ok: true, count: 0 });
   });
+
+  it('tries a failed source once more', async () => {
+    let calls = 0;
+    const flaky = jest.fn(async (url) => {
+      if (url.startsWith('https://hn.algolia.com') && calls++ === 0) throw new Error('Timeout after 10000 ms');
+      return fetchFn(url);
+    });
+    const { report } = await collectCandidates({ fetchFn: flaky, now: NOW, feeds: [] });
+    expect(report).toEqual([{ source: 'Hacker News', ok: true, count: 0 }]);
+    expect(flaky).toHaveBeenCalledTimes(2);
+  });
 });

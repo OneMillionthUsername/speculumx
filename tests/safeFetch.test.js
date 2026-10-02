@@ -2,7 +2,7 @@
 import http from 'node:http';
 import zlib from 'node:zlib';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { isPublicAddress, safeFetch, createFetcher, bodyText, FetchError } from '../utils/safeFetch.js';
+import { isPublicAddress, safeFetch, createFetcher, bodyText, FetchError, connectError } from '../utils/safeFetch.js';
 
 describe('isPublicAddress', () => {
   it.each([
@@ -41,6 +41,20 @@ describe('safeFetch', () => {
     await expect(safeFetch('https://user:secret@example.com/')).rejects.toThrow(/credentials/i);
     await expect(safeFetch('http://example.com:3306/')).rejects.toThrow(/port/i);
     await expect(safeFetch('not a url')).rejects.toThrow(/Invalid URL/);
+  });
+});
+
+describe('connectError', () => {
+  it('lists the attempts of a failed dual-stack connect', () => {
+    const attempt = (code, address) => Object.assign(new Error(code), { code, address, port: 443 });
+    const error = connectError(new AggregateError([attempt('ETIMEDOUT', '192.0.2.1'), attempt('ENETUNREACH', '2001:db8::1')]));
+    expect(error).toBeInstanceOf(FetchError);
+    expect(error.message).toBe('Connection failed: ETIMEDOUT 192.0.2.1:443 | ENETUNREACH 2001:db8::1:443');
+  });
+
+  it('leaves other errors alone', () => {
+    const error = new Error('connect ECONNREFUSED 127.0.0.1:80');
+    expect(connectError(error)).toBe(error);
   });
 });
 
