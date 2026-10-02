@@ -332,6 +332,14 @@ export async function initializeDatabaseSchema() {
     } catch (error) {
       logger.error(`Could not add cards.auto_generated: ${error.message}`);
     }
+    // The clean-up of expired drafts (getExpiredAutoCards) needs the creation time. Card tables from
+    // before it was part of CREATE TABLE lack it; their existing rows get the time of this ALTER, so no
+    // draft is deleted earlier than its retention time.
+    try {
+      await conn.query('ALTER TABLE cards ADD COLUMN IF NOT EXISTS created_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+    } catch (error) {
+      logger.error(`Could not add cards.created_at: ${error.message}`);
+    }
 
     // Analytics/Views-Tabelle
     // await conn.query(`

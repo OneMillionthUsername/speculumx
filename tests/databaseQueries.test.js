@@ -44,6 +44,15 @@ describe('DatabaseService queries', () => {
       expect(mockQuery).toHaveBeenCalledWith(expect.stringMatching(/ALTER TABLE cards ADD COLUMN IF NOT EXISTS auto_generated BOOLEAN NOT NULL DEFAULT 0/));
     });
 
+    it('adds the created_at column that the clean-up of old drafts needs to an existing cards table', async () => {
+      mockQuery.mockReset();
+      mockQuery.mockResolvedValue({});
+
+      await expect(initializeDatabaseSchema()).resolves.toBe(true);
+
+      expect(mockQuery).toHaveBeenCalledWith(expect.stringMatching(/ALTER TABLE cards ADD COLUMN IF NOT EXISTS created_at DATETIME DEFAULT CURRENT_TIMESTAMP/));
+    });
+
     it('still starts when the column cannot be added', async () => {
       mockQuery.mockReset();
       mockQuery.mockImplementation(async (sql) => {
