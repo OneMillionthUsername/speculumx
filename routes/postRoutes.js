@@ -20,7 +20,6 @@ import commentsController from '../controllers/commentController.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import { normalizePostLayout } from '../models/postModel.js';
 import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, applySsrNoCache } from '../utils/utils.js';
-import { getSafeRefererPath } from '../utils/requestUtils.js';
 import simpleCache from '../utils/simpleCache.js';
 import csrfProtection from '../utils/csrf.js';
 import { globalLimiter, strictLimiter, COMMENT_LIMIT_MESSAGE } from '../utils/limiters.js';
@@ -464,6 +463,12 @@ postRouter.get('/:slug',
       return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin, csrfToken });
     }
   });
+// Where the editor leads after saving: a published post opens, an unpublished one (draft or withdrawn post)
+// cannot be read, so the admin sees it in the post management list instead.
+const POST_ADMIN_PATH = '/blogpost/admin/drafts';
+const afterSaveLocation = (postId, published) => (published ? `/blogpost/id/${postId}` : `${POST_ADMIN_PATH}#post-${postId}`);
+const isChecked = (value) => value === 'on' || value === 'true' || value === true;
+
 postRouter.post('/create', 
   strictLimiter,
   csrfProtection,
@@ -473,15 +478,17 @@ postRouter.post('/create',
     const { title, content } = req.body || {};
     const tags = parseTags(req.body && req.body.tags);
     const slug = createSlug(title);
+    // The editor's "Veröffentlicht" checkbox; unticked saves a draft
+    const published = isChecked(req.body && req.body.published);
     try {
       const layout = normalizePostLayout(req.body && req.body.layout);
-      const result = await postController.createPost({ title, slug, content, tags, author: req.user.full_name, category_id: req.body.category_id, layout });
+      const result = await postController.createPost({ title, slug, content, tags, author: req.user.full_name, category_id: req.body.category_id, layout, published });
       if (!result) {
         return res.redirect(303, '/createPost?error=1');
       }
       const postId = Number(result.postId || result.id);
       simpleCache.delByPrefix('posts:');
-      res.redirect(303, `/blogpost/id/${postId}`);
+      res.redirect(303, afterSaveLocation(postId, published));
     } catch (error) {
       console.error('Error creating new blog post', error);
       res.redirect(303, '/createPost?error=1');
@@ -500,7 +507,7 @@ postRouter.post('/update/:postId',
     const updated_at = new Date();
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
     const category_id = source.category_id ? Number(source.category_id) : 7;
-    const published = source.published === 'on' || source.published === 'true' || source.published === true;
+    const published = isChecked(source.published);
     // A form without the layout field (e.g. an editor page loaded before the field existed) keeps the stored layout
     const layoutField = Object.hasOwn(source, 'layout') ? { layout: normalizePostLayout(source.layout) } : {};
     try {
@@ -510,7 +517,7 @@ postRouter.post('/update/:postId',
       }
       const finalId = Number(result.id ?? postId);
       simpleCache.delByPrefix('posts:');
-      res.redirect(303, `/blogpost/id/${finalId}`);
+      res.redirect(303, afterSaveLocation(finalId, published));
     } catch (error) {
       console.error('Error updating blog post', error);
       res.redirect(303, `/blogpost/update/${postId}?error=1`);
@@ -528,7 +535,8 @@ postRouter.post('/delete/:postId',
     logger.debug('DELETE /delete: Attempting to delete post ' + postId);
     logger.debug('DELETE /delete: postId type: ' + typeof postId + ', value: ' + postId);
 
-    const returnTo = getSafeRefererPath(req, '/');
+    // Posts are deleted from the post management list; back there (the referring page may be gone with the post)
+    const returnTo = POST_ADMIN_PATH;
     const wantsJson = req.headers.accept && req.headers.accept.includes('application/json');
 
     if (validationService.isValidIdSchema(postId) === false) {
