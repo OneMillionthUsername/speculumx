@@ -57,3 +57,30 @@ export function getSafeRefererRedirect(req, fallback, { query = {}, hash = '' } 
   url.hash = hash;
   return url.pathname + url.search + url.hash;
 }
+
+// Earliest year the archive filter accepts; nothing on the blog predates it
+export const ARCHIVE_MIN_YEAR = 1970;
+
+/**
+ * Parses the `?year=` filter of the archive routes.
+ *
+ * Only plain four-digit years between ARCHIVE_MIN_YEAR and next year are valid.
+ * `Number()` alone would turn 'abc' into NaN (which the MariaDB connector writes
+ * into the SQL as a bare token) and would accept '0x7E8' or '2024.0' as 2024,
+ * each variant creating its own cache entry.
+ *
+ * @param {unknown} raw - `req.query.year` (string, array or undefined).
+ * @returns {{ year: number|undefined, valid: boolean }} `year` is undefined when
+ *   no filter was given; `valid` is false for any value that is not a usable year.
+ */
+export function parseArchiveYear(raw) {
+  if (raw === undefined || raw === null) return { year: undefined, valid: true };
+  if (typeof raw !== 'string') return { year: undefined, valid: false };
+  const trimmed = raw.trim();
+  if (trimmed === '') return { year: undefined, valid: true };
+  if (!/^\d{4}$/.test(trimmed)) return { year: undefined, valid: false };
+  const year = Number(trimmed);
+  const maxYear = new Date().getFullYear() + 1;
+  if (!Number.isInteger(year) || year < ARCHIVE_MIN_YEAR || year > maxYear) return { year: undefined, valid: false };
+  return { year, valid: true };
+}

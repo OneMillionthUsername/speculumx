@@ -11,6 +11,7 @@ import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
+import { parseArchiveYear } from '../utils/requestUtils.js';
 import { normalizeQuery, getSearchTerms } from '../public/assets/js/shared/search.js';
 
 /**
@@ -170,11 +171,12 @@ postApiRouter.get('/edit/:postId', globalLimiter, validateId, authenticateToken,
 
 postApiRouter.get('/archive', globalLimiter, async (req, res) => {
   try {
-    const yearParam = req.query && req.query.year ? String(req.query.year).trim() : null;
-    const cacheKey = yearParam ? `posts:archive:${yearParam}` : 'posts:archive';
+    const { year, valid } = parseArchiveYear(req.query && req.query.year);
+    if (!valid) return res.status(400).json({ error: 'Invalid year' });
+    // Key on the normalised year so variants like ' 2024' share one cache entry
+    const cacheKey = year !== undefined ? `posts:archive:${year}` : 'posts:archive';
     let posts = simpleCache.get(cacheKey);
     if (!posts) {
-      const year = yearParam ? Number(yearParam) : undefined;
       posts = await postController.getArchivedPosts(year);
       simpleCache.set(cacheKey, posts);
     }
@@ -189,7 +191,7 @@ postApiRouter.get('/archive', globalLimiter, async (req, res) => {
       }
     }
     const result = convertBigInts(posts) || posts;
-    if (yearParam && (!result || result.length === 0)) {
+    if (year !== undefined && (!result || result.length === 0)) {
       return res.status(404).json({ posts: [], archiveYears, error: 'No posts found for the requested year' });
     }
     return res.json({ posts: result, archiveYears });

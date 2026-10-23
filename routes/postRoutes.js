@@ -27,6 +27,7 @@ import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
+import { parseArchiveYear } from '../utils/requestUtils.js';
 import { withExcerpts, detectLanguage } from '../public/assets/js/shared/text.js';
 
 const postRouter = express.Router();
@@ -387,8 +388,13 @@ postRouter.get('/:maybeId',
 // interpreted as a slug. Register it here (after numeric id handler).
 postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
   try {
-    const yearParam = req.query && req.query.year ? String(req.query.year).trim() : null;
-    const year = yearParam ? Number(yearParam) : undefined;
+    const { year, valid } = parseArchiveYear(req.query && req.query.year);
+    if (!valid) {
+      const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+      applySsrNoCache(res, { varyCookie: true });
+      return res.status(400).render('error', { message: 'Ungültiges Jahr', isAdmin, csrfToken });
+    }
     const page = parsePage(req);
 
     const [{ posts, total }, archiveYears] = await Promise.all([
@@ -410,7 +416,7 @@ postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
       return renderPaginationNotFound(req, res);
     }
 
-    if (yearParam && total === 0) {
+    if (year !== undefined && total === 0) {
       const isAdmin = getSsrAdmin(res);
       const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
@@ -420,7 +426,7 @@ postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
     const response = convertBigInts(posts) || posts;
     const isAdmin = getSsrAdmin(res);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-    const extraParams = yearParam ? `&year=${yearParam}` : '';
+    const extraParams = year !== undefined ? `&year=${year}` : '';
     const pagination = buildPagination(page, total, '/blogpost/archive', extraParams);
     applySsrNoCache(res, { varyCookie: true });
     return res.render('archiv', { posts: withExcerpts(response), archiveYears, isAdmin, csrfToken, pagination });
