@@ -2,7 +2,11 @@
  * In-memory deduplication for post view counts.
  *
  * Prevents a single IP from incrementing the view counter for the same post
- * more than once within a 24-hour window. Also filters known bots and crawlers.
+ * more than once within a 30-minute window. Also filters known bots and crawlers.
+ *
+ * Views are reported by a client-side beacon (see views/readPost.ejs), so most
+ * crawlers never get here because they do not run JavaScript. This filter is
+ * the second line of defence for those that do or that hit the endpoint directly.
  *
  * Not persistent across server restarts — acceptable tradeoff for simplicity.
  */
@@ -13,11 +17,14 @@ const MAX_ENTRIES = 10_000;
 // key: `${ip}:${postId}` → timestamp of last counted view
 const seen = new Map();
 
-const BOT_PATTERN = /bot|crawler|spider|scraper|slurp|bingbot|googlebot|yandex|baidu|duckduck|facebot|whatsapp|telegram|twitterbot|linkedinbot|semrush|ahrefs|mj12|majestic|bytespider|claudebot/i;
+const BOT_PATTERN = /bot|crawler|spider|scraper|slurp|bingbot|googlebot|yandex|baidu|duckduck|facebot|whatsapp|telegram|twitterbot|linkedinbot|semrush|ahrefs|mj12|majestic|bytespider|claudebot|heritrix|firstpage|dataprovider|builtwith|soulsociety|headless/i;
+
+// A UA that carries a URL ("+http://example.com/bot.html") is practically always a bot
+const URL_IN_UA_PATTERN = /https?:\/\//i;
 
 function isBot(userAgent) {
   if (!userAgent) return true; // no UA → treat as bot
-  return BOT_PATTERN.test(userAgent);
+  return BOT_PATTERN.test(userAgent) || URL_IN_UA_PATTERN.test(userAgent);
 }
 
 function evictExpired() {
@@ -53,4 +60,5 @@ function shouldCount(ip, postId, userAgent) {
   return true;
 }
 
-export default { shouldCount };
+export { isBot, shouldCount };
+export default { isBot, shouldCount };

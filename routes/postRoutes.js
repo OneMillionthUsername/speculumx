@@ -22,7 +22,7 @@ import { normalizePostLayout } from '../models/postModel.js';
 import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, applySsrNoCache } from '../utils/utils.js';
 import simpleCache from '../utils/simpleCache.js';
 import csrfProtection from '../utils/csrf.js';
-import { globalLimiter, strictLimiter, COMMENT_LIMIT_MESSAGE } from '../utils/limiters.js';
+import { globalLimiter, strictLimiter, viewLimiter, COMMENT_LIMIT_MESSAGE } from '../utils/limiters.js';
 import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validateSlug } from '../middleware/validationMiddleware.js';
@@ -323,10 +323,6 @@ postRouter.get('/id/:postId',
     const postId = req.params.postId;
     try {
       const post = await postController.getPostById(postId);
-      // Only increment views if we got a valid post object
-      if (post && post.id) {
-        incrementViews(req, post.id);
-      }
       const safe = convertBigInts(post) || post;
       const viewData = await buildReadPostViewData(req, res, safe);
       // Prevent caching of personalized HTML (admin vs non-admin)
@@ -349,6 +345,27 @@ postRouter.get('/id/:postId',
     }
   });
 
+// Read beacon from views/readPost.ejs. The page itself no longer counts a view:
+// crawlers fetch HTML but rarely run JavaScript, so only the browser reports a
+// read after a few seconds of visible time. viewTracker still filters bot UAs
+// and repeat views per IP. Reads by a logged-in admin are not counted.
+postRouter.post('/id/:postId/view',
+  viewLimiter,
+  csrfProtection,
+  validateId,
+  async (req, res) => {
+    if (getSsrAdmin(res)) return res.status(204).end();
+    let post;
+    try {
+      // Throws for unknown and unpublished posts
+      post = await postController.getPostById(req.params.postId);
+    } catch (_error) {
+      return res.status(204).end();
+    }
+    if (post && post.id) await incrementViews(req, post.id);
+    return res.status(204).end();
+  });
+
 // Support shorthand numeric URL: /blogpost/59
 // This route must be declared BEFORE the slug route so numeric paths are
 // interpreted as IDs and not validated as slugs.
@@ -364,7 +381,6 @@ postRouter.get('/:maybeId',
     const postId = maybe;
     try {
       const post = await postController.getPostById(postId);
-      if (post && post.id) incrementViews(req, post.id);
       const safe = convertBigInts(post) || post;
       const viewData = await buildReadPostViewData(req, res, safe);
       applySsrNoCache(res, { varyCookie: true });
@@ -448,7 +464,6 @@ postRouter.get('/:slug',
     const slug = req.params.slug;
     try {
       const post = await postController.getPostBySlug(slug);
-      if (post && post.id) incrementViews(req, post.id);
       const safe = convertBigInts(post) || post;
       const viewData = await buildReadPostViewData(req, res, safe);
       applySsrNoCache(res, { varyCookie: true });

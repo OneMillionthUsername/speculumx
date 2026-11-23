@@ -79,6 +79,59 @@
 <script id="server-post" type="application/json"<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>><%- (function(obj){ try { var s = JSON.stringify(obj); return s.replace(/</g,'\\u003c').replace(/-->/g,'--\\u003e').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029'); } catch(e){ return 'null'; } })(post) %></script>
 <% } %>
 
+<% if (typeof post !== 'undefined' && post && post.id && typeof csrfToken !== 'undefined' && csrfToken) { %>
+<script id="view-beacon" data-post-id="<%= Number(post.id) %>" data-csrf="<%= csrfToken %>"<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
+// Counts a read once per page view, after 5 s of visible time. Crawlers that
+// only fetch the HTML never run this, so they no longer show up in `views`.
+(function() {
+    var el = document.getElementById('view-beacon');
+    var postId = el && el.getAttribute('data-post-id');
+    var token = el && el.getAttribute('data-csrf');
+    if (!postId || !token) return;
+
+    var NEEDED_MS = 5000;
+    var visibleMs = 0;
+    var visibleSince = null;
+    var timer = null;
+    var sent = false;
+
+    function send() {
+        if (sent) return;
+        sent = true;
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        var url = '/blogpost/id/' + encodeURIComponent(postId) + '/view';
+        var body = new URLSearchParams({ _csrf: token });
+        try {
+            if (navigator.sendBeacon && navigator.sendBeacon(url, body)) return;
+        } catch (_e) { /* fall back to fetch */ }
+        try {
+            fetch(url, { method: 'POST', body: body, credentials: 'same-origin', keepalive: true }).catch(function() {});
+        } catch (_e) { /* counting is best effort */ }
+    }
+
+    function start() {
+        if (sent || visibleSince !== null) return;
+        visibleSince = Date.now();
+        timer = setTimeout(send, Math.max(0, NEEDED_MS - visibleMs));
+    }
+
+    function pause() {
+        if (visibleSince === null) return;
+        visibleMs += Date.now() - visibleSince;
+        visibleSince = null;
+        clearTimeout(timer);
+    }
+
+    function onVisibilityChange() {
+        if (document.visibilityState === 'visible') start(); else pause();
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    if (document.visibilityState === 'visible') start();
+})();
+</script>
+<% } %>
+
 <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
 (function() {
     try {
