@@ -23,7 +23,7 @@ jest.unstable_mockModule('../controllers/postController.js', () => ({
 jest.unstable_mockModule('../controllers/commentController.js', () => ({ default: {} }));
 jest.unstable_mockModule('../databases/mariaDB.js', () => ({ DatabaseService: {} }));
 jest.unstable_mockModule('../utils/csrf.js', () => ({ default: passThrough }));
-jest.unstable_mockModule('../utils/limiters.js', () => ({ globalLimiter: passThrough, strictLimiter: passThrough, COMMENT_LIMIT_MESSAGE: '' }));
+jest.unstable_mockModule('../utils/limiters.js', () => ({ globalLimiter: passThrough, strictLimiter: passThrough, viewLimiter: passThrough, COMMENT_LIMIT_MESSAGE: '' }));
 jest.unstable_mockModule('../middleware/authMiddleware.js', () => ({ authenticateToken: passThrough, requireAdmin: passThrough }));
 jest.unstable_mockModule('../utils/logger.js', () => ({
   default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
