@@ -6,8 +6,8 @@ import { getClientIp, getSafeRefererRedirect } from './requestUtils.js';
 /**
  * Rate limiter helpers used across routes.
  * Exposes `strictLimiter`, `globalLimiter`, `loginLimiter` and the form
- * limiters `commentLimiter` / `contactLimiter` with sensible defaults and
- * expressive error messages.
+ * limiters `commentLimiter` / `contactLimiter` plus the read-beacon
+ * `viewLimiter` with sensible defaults and expressive error messages.
  *
  * Set RATE_LIMIT_WHITELIST in .env to a comma-separated list of IPs
  * or CIDR ranges that should bypass all rate limits.
@@ -125,6 +125,15 @@ const commentLimiter = rateLimit({
   }),
 });
 
+// Read beacon from the post page: one per post and page view, a reader never gets close
+const viewLimiter = rateLimit({
+  ...baseLimiterConfig,
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  skip: isWhitelisted,
+  handler: makeHandler('viewLimiter'),
+});
+
 // Every contact message ends up as an email to the site owner
 const contactLimiter = rateLimit({
   ...baseLimiterConfig,
@@ -143,5 +152,6 @@ export {
   loginLimiter,
   commentLimiter,
   contactLimiter,
+  viewLimiter,
   COMMENT_LIMIT_MESSAGE,
 };

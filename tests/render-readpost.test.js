@@ -62,3 +62,24 @@ test('readPost.ejs escapes raw title/comments but renders content HTML', () => {
   // Post-Content: bewusst rohes HTML (DOMPurify beim Schreiben)
   expect(html).toContain('<p>Intended <strong>HTML</strong></p>');
 });
+
+test('readPost.ejs emits the read beacon only when a CSRF token is available', () => {
+  const viewPath = path.resolve(process.cwd(), 'views', 'readPost.ejs');
+  const tmpl = fs.readFileSync(viewPath, 'utf8');
+  const samplePost = {
+    id: 61,
+    slug: 'beacon-test',
+    title: 'Beacon',
+    content: '<p>Text</p>',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    tags: [],
+  };
+
+  const withToken = ejs.render(tmpl, { post: samplePost, csrfToken: 'tok"en', nonce: 'n0nce' }, { filename: viewPath });
+  const withoutToken = ejs.render(tmpl, { post: samplePost }, { filename: viewPath });
+
+  expect(withToken).toContain('<script id="view-beacon" data-post-id="61" data-csrf="tok&#34;en" nonce="n0nce">');
+  expect(withToken).toContain('/view');
+  expect(withoutToken).not.toContain('view-beacon');
+});
