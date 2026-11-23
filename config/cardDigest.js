@@ -23,6 +23,15 @@ function parseBoolean(value, fallback) {
   return fallback;
 }
 
+// Gemini thinking level: MINIMAL | LOW | MEDIUM | HIGH, or DEFAULT for the model's own default.
+// MINIMAL is not allowed on gemini-3.8-flash; that model is then skipped for the next one.
+function parseThinkingLevel(value, fallback) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const normalized = String(value).trim().toUpperCase();
+  if (normalized === 'DEFAULT') return null;
+  return ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH'].includes(normalized) ? normalized : fallback;
+}
+
 export const CARD_DIGEST = {
   // Only stories newer than this many days are considered (the job runs weekly)
   days: parseInteger(process.env.CARD_DIGEST_DAYS, 7, 1, 31),
@@ -35,8 +44,16 @@ export const CARD_DIGEST = {
   draftTtlDays: parseInteger(process.env.CARD_DIGEST_DRAFT_TTL_DAYS, 30, 0, 365),
   // Newest items taken from each feed
   perFeedMax: 10,
-  // Upper bound for the candidate list that is sent to the LLM
-  maxCandidates: parseInteger(process.env.CARD_DIGEST_MAX_CANDIDATES, 150, 20, 400),
+  // Upper bound for the candidate list that is sent to the LLM. Was 150 until the Gemini answer time
+  // reached the 300 s fetch limit (Nov 2026); fewer candidates mean a shorter prompt and answer time.
+  maxCandidates: parseInteger(process.env.CARD_DIGEST_MAX_CANDIDATES, 100, 20, 400),
+  // Limit per LLM model in seconds; on a timeout the next model of the chain is tried, so the worst
+  // case is (number of Gemini models) x this value. Capped below 300 s because Node's fetch gives up
+  // by itself after 300 s without response headers.
+  llmTimeoutSeconds: parseInteger(process.env.CARD_DIGEST_LLM_TIMEOUT_SECONDS, 240, 30, 290),
+  // How much Gemini thinks before picking (see parseThinkingLevel). LOW keeps the run short; the
+  // model default (MEDIUM on gemini-3.8-flash) pushed the answer time towards the 300 s limit.
+  geminiThinkingLevel: parseThinkingLevel(process.env.CARD_DIGEST_GEMINI_THINKING_LEVEL, 'LOW'),
   // Language of titles and subtitles written by the LLM
   language: process.env.CARD_DIGEST_LANGUAGE || 'Deutsch',
   // Image sources, tried in this order: (1) an image whose free licence can be verified,

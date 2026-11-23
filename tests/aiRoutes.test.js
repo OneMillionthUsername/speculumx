@@ -107,6 +107,29 @@ describe('POST /api/ai/generate (Gemini via @google/genai)', () => {
       .toEqual(['gemini-3-flash-preview', 'gemini-3.8-flash']);
   });
 
+  it('moves on to the next model when the connection times out or drops', async () => {
+    const headersTimeout = new TypeError('fetch failed', { cause: { code: 'UND_ERR_HEADERS_TIMEOUT', message: 'Headers Timeout Error' } });
+    const reset = new TypeError('fetch failed', { cause: { code: 'ECONNRESET', message: 'socket hang up' } });
+    mockGenerateContent
+      .mockRejectedValueOnce(headersTimeout)
+      .mockRejectedValueOnce(reset)
+      .mockResolvedValueOnce({ text: 'ok' });
+
+    const res = await request(buildApp()).post('/api/ai/generate').send({ prompt: 'Text' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.model).toBe('gemini-3.6-flash');
+  });
+
+  it('does not try other models when the API key is rejected', async () => {
+    mockGenerateContent.mockRejectedValue(apiError(403, 'Permission denied for model gemini-3.8-flash'));
+
+    const res = await request(buildApp()).post('/api/ai/generate').send({ prompt: 'Text' });
+
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+    expect(res.body.success).toBe(false);
+  });
+
   it('does not try other models for a non-availability error', async () => {
     mockGenerateContent.mockRejectedValue(apiError(400, 'INVALID_ARGUMENT'));
 

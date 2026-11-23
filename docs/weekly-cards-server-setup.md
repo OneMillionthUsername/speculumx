@@ -40,6 +40,9 @@ Optional (Standardwerte in Klammern):
 | `CARD_DIGEST_DRAFT_TTL_DAYS` (30) | Tage, nach denen unveröffentlichte Auto-Entwürfe gelöscht werden, `0` schaltet das Löschen ab |
 | `CARD_DIGEST_DAYS` (7) | Alter der Meldungen in Tagen |
 | `CARD_DIGEST_HN_MIN_POINTS` (150) | Mindestpunkte für Hacker-News-Meldungen |
+| `CARD_DIGEST_MAX_CANDIDATES` (100) | Höchstzahl der Meldungen, die an das LLM gehen, 20–400. Weniger heißt kürzerer Prompt und schnellere Antwort, aber weniger Auswahl |
+| `CARD_DIGEST_LLM_TIMEOUT_SECONDS` (240) | Zeitlimit pro LLM-Modell in Sekunden, 30–290. Danach wird das nächste Gemini-Modell probiert. Höchstens 290, weil Node selbst nach 300 s ohne Antwort-Header abbricht (`UND_ERR_HEADERS_TIMEOUT`). Schlechtester Fall: 5 Modelle × Limit |
+| `CARD_DIGEST_GEMINI_THINKING_LEVEL` (`LOW`) | Wie lange Gemini vor der Auswahl nachdenkt: `MINIMAL`, `LOW`, `MEDIUM`, `HIGH` oder `DEFAULT` (Standard des Modells, bei `gemini-3.8-flash` `MEDIUM`). `MINIMAL` lehnt `gemini-3.8-flash` ab, dann wird es übersprungen |
 | `CARD_DIGEST_LANGUAGE` (Deutsch) | Sprache von Titel und Untertitel |
 | `CARD_DIGEST_LICENSED_IMAGES` (true) | `false`: nie nach lizenzierten Bildern suchen |
 | `CARD_DIGEST_AI_IMAGES` (true) | `false`: nie KI-Bilder erzeugen, immer das Standardbild |
@@ -95,6 +98,8 @@ Empfohlen ist ein systemd-User-Timer unter dem Deploy-User, weil er die Umgebung
 ```ini
 [Unit]
 Description=speculumx: weekly card drafts
+# Mail an office@, wenn der Lauf scheitert (siehe "Benachrichtigung bei Fehlschlag")
+OnFailure=speculumx-notify-failure@%n.service
 
 [Service]
 Type=oneshot
@@ -131,6 +136,46 @@ Alternative Cron-Zeile (rootless Docker braucht `DOCKER_HOST`):
 ```
 
 Der Lauf beendet sich mit Exit-Code 1, wenn alle Quellen, das LLM oder die Datenbank ausfallen. `systemctl --user status speculumx-weekly-cards.service` zeigt dann `failed`.
+
+### 6. Benachrichtigung bei Fehlschlag
+
+Scheitert der Lauf, startet systemd über `OnFailure=` in der **Service**-Unit (oben) eine zweite Unit. Diese schickt die letzten Zeilen des Journals per Mail. In der Timer-Unit würde `OnFailure=` nicht auslösen, weil dort nur der Service scheitert. Die Mail geht über das `sendmail` des Hosts, also über denselben Mailserver, den die App per `SMTP_HOST=host.docker.internal` nutzt. Fehlt `/usr/sbin/sendmail` auf dem Host, ist dieser Weg so nicht nutzbar.
+
+`~/bin/speculumx-notify-failure.sh` (ausführbar, `chmod 750`). Empfänger und Absender an die Domain anpassen:
+
+```sh
+#!/bin/sh
+# $1: Name der gescheiterten Unit, z. B. speculumx-weekly-cards.service
+unit="$1"
+{
+  printf 'From: speculumx <no-reply@<DOMAIN>>\n'
+  printf 'To: office@<DOMAIN>\n'
+  printf 'Subject: [speculumx] %s fehlgeschlagen\n' "$unit"
+  printf 'Content-Type: text/plain; charset=UTF-8\n\n'
+  printf 'Der Lauf von %s auf %s ist gescheitert. Letzte Zeilen des Journals:\n\n' "$unit" "$(hostname)"
+  journalctl --user -u "$unit" -n 60 --no-pager -o short-iso
+} | /usr/sbin/sendmail -t
+```
+
+`~/.config/systemd/user/speculumx-notify-failure@.service`
+
+```ini
+[Unit]
+Description=speculumx: mail about failed %i
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/speculumx-notify-failure.sh %i
+```
+
+```bash
+systemctl --user daemon-reload
+# Testmail, ohne den Card-Lauf (und ohne Gemini) zu starten:
+systemctl --user start speculumx-notify-failure@speculumx-weekly-cards.service
+journalctl --user -u 'speculumx-notify-failure@*' -n 20   # Fehler beim Versand?
+```
+
+Danach prüfen, ob die Testmail bei office@ angekommen ist, auch im Spam-Ordner.
 
 ## Betrieb
 

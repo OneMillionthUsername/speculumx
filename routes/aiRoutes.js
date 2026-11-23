@@ -5,6 +5,7 @@ import { ANTHROPIC_API_KEY, GEMINI_API_KEY } from '../config/config.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
 import { DEFAULT_GEMINI_MODEL, FALLBACK_GEMINI_MODELS } from '../config/aiModels.js';
+import { describeError, isAvailabilityError, isRetryableGeminiError } from '../utils/llmErrors.js';
 
 /**
  * AI helper routes (protected admin-only endpoints).
@@ -31,18 +32,6 @@ const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 const CLAUDE_MODELS = ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'];
 
-function isAvailabilityError(err) {
-  const msg = String(err?.message || err?.status || '').toLowerCase();
-  return (
-    msg.includes('model')
-    || msg.includes('404')
-    || msg.includes('not found')
-    || msg.includes('unavailable')
-    || msg.includes('deprecated')
-    || msg.includes('overloaded')
-  );
-}
-
 async function tryClause(prompt, systemInstruction) {
   let lastError;
   for (const model of CLAUDE_MODELS) {
@@ -60,16 +49,10 @@ async function tryClause(prompt, systemInstruction) {
       lastError = err;
       const hasNext = model !== CLAUDE_MODELS[CLAUDE_MODELS.length - 1];
       if (!isAvailabilityError(err) || !hasNext) throw err;
-      logger.warn('Claude model unavailable, trying next', { failedModel: model, error: err.message });
+      logger.warn('Claude model unavailable, trying next', { failedModel: model, error: describeError(err) });
     }
   }
   throw lastError;
-}
-
-// Free-tier quotas are counted per model, so a 429 (or a transient 5xx) on one
-// Gemini model is worth retrying on the next one.
-function isGeminiFallbackError(err) {
-  return [429, 500, 503].includes(err?.status) || isAvailabilityError(err);
 }
 
 async function tryGemini(prompt, systemInstruction, preferredModel) {
@@ -99,8 +82,9 @@ async function tryGemini(prompt, systemInstruction, preferredModel) {
     } catch (err) {
       lastError = err;
       const hasNext = i < candidates.length - 1;
-      if (!isGeminiFallbackError(err) || !hasNext) throw err;
-      logger.warn('Gemini model unavailable, trying next', { failedModel: model, nextModel: candidates[i + 1], error: err.message });
+      // Quota, transient 5xx, timeout or dropped connection: the next model may still answer
+      if (!isRetryableGeminiError(err) || !hasNext) throw err;
+      logger.warn('Gemini model unavailable, trying next', { failedModel: model, nextModel: candidates[i + 1], error: describeError(err) });
     }
   }
   throw lastError;
@@ -123,7 +107,7 @@ router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async 
         aiResult = await tryClause(prompt, systemInstruction);
         logger.debug('AI request served by Claude', { model: aiResult.model });
       } catch (claudeErr) {
-        logger.warn('Claude failed, falling back to Gemini', { error: claudeErr.message });
+        logger.warn('Claude failed, falling back to Gemini', { error: describeError(claudeErr) });
       }
     }
 
@@ -139,7 +123,7 @@ router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async 
     return res.json({ success: true, data: { text: aiResult.text, model: aiResult.model } });
   } catch (err) {
     logger.error('AI generate route error', {
-      error: err.message,
+      error: describeError(err),
       status: err.status || err.statusCode,
       stack: err.stack,
     });

@@ -217,6 +217,8 @@ export async function runCardDigest(options = {}, deps = {}) {
       recentTitles: existing.slice(0, RECENT_TITLES_FOR_PROMPT).map(card => card.title),
       now,
     }),
+    timeoutMs: config.llmTimeoutSeconds * 1000,
+    thinkingLevel: config.geminiThinkingLevel,
   });
   const picks = parsePicks(answer.text, candidates.length, config.maxCards);
 

@@ -24,6 +24,7 @@ import { CARD_DIGEST, FEEDS } from '../config/cardDigest.js';
 import { collectCandidates } from '../services/newsSourceService.js';
 import { cleanupExpiredDrafts, runCardDigest } from '../services/cardDigestService.js';
 import { generateIllustration } from '../services/imageGenerationService.js';
+import { describeError } from '../utils/llmErrors.js';
 
 const args = process.argv.slice(2);
 const flag = name => args.includes(name);
@@ -128,7 +129,7 @@ try {
   await closeDatabase();
   process.exit(code);
 } catch (error) {
-  console.error(`Card digest failed: ${error.message}`);
+  console.error(`Card digest failed: ${describeError(error)}`);
   await closeDatabase().catch(() => {});
   process.exit(1);
 }

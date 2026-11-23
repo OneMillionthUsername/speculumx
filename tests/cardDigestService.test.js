@@ -176,6 +176,11 @@ describe('runCardDigest', () => {
     expect(prompt).toContain('- Schon da');
   });
 
+  it('hands the LLM its time limit and thinking level from the digest config', async () => {
+    await run({ llmTimeoutSeconds: 60, geminiThinkingLevel: 'HIGH' });
+    expect(llm.generateText).toHaveBeenCalledWith(expect.objectContaining({ timeoutMs: 60_000, thinkingLevel: 'HIGH' }));
+  });
+
   it('skips the LLM when nothing new is left', async () => {
     cards.getAllCardsAdmin.mockResolvedValue([1, 2, 3].map(n => ({ title: `T${n}`, link: `https://example.org/story-${n}` })));
     const result = await run();
